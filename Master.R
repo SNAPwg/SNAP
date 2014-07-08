@@ -12,57 +12,56 @@ Graphs<-F
 GraphsFish<-T
 PrintLifeHistory<-T
 
-#read.csv("LifeHistory.csv")
-
+Life<-read.csv("LifeHistory.csv")
+SimCTL<-read.csv("GrandSimCtl.csv")
+Fleets<-read.csv("Fleets.csv")
 
 #==life history ==============================
-kmax	 	<-20		# max age
-kmat	 	<-2.63	# age at maturity
-kmin	 	<-1		# minimium size
-M   	 	<-0.34	# natural mortality
-Linf	 	<-18.3	# VonBert Linf
-K		<-.24		# VonBert K
-t0  	 	<-.44		# VonBert t0
-wtA		<-0.0046	# weight A
-wtB		<-2.63	# weight B
-mat50		<-2.5		# age at 50% maturity
-mat95		<-4		# age at 95% maturity 
+kmax	 	<-Life[grep('kmax',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]              # maximum age
+kmat	 	<-Life[grep('kmat',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]           	  # age at maturity
+kmin	 	<-Life[grep('kmin',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]	            # minimium size
+M   	 	<-Life[grep('natural mortality',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]	# natural mortality
+Linf	 	<-Life[grep('Linf',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]            	# VonBert Linf
+K		    <-Life[grep('VonBert K',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]       	# VonBert K
+t0  	 	<-Life[grep('t0',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]         		  	# VonBert t0
+wtA	  	<-Life[grep('wtA',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]	              #  weight A
+wtB	  	<-Life[grep('wtB',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]	              # weight B
+mat50		<-Life[grep('mat50',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]             # age at 50% maturity
+mat95		<-Life[grep('mat95',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]             # age at 95% maturity 
+lenSD   <-Life[grep('lenSD',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]             # standard deviation of length at age
 
- MatAge<-1/(1+exp(-log(19)*((seq(1,kmax)-mat50)/(mat95-mat50))))
- lenAtAge<-rep(0,kmax)
- wgtAtAge<-rep(0,kmax)
+#==recruitment================================
+detRec  <-Life[grep('detRec',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]        	    # deterministic recruitment?
+R0	  	<-Life[grep('R0',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]             		# Virgin recruitment
+steepness<-Life[grep('steepness',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]      		# steepness
+sigmaR	<-Life[grep('sigmaR',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]            	# variability around recruitment curve
+RecDist <-Life[grep('RecDist',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]            # How is recruitment distributed over space? (1=equally,2=determined by adults,3=determined by habitat.csv)
+sdx		  <-Life[grep('sdx',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]              	# sd of movement on x axis (in units of rows/columns)
+sdy	  	<-Life[grep('sdy',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]              	# sd of movement on y axis
+movP50	<-Life[grep('movP50',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]             # probability moving by length (logistic; 50%; set both to 0 if all move)
+movP95	<-Life[grep('movP95',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]             # probability of moving at length (95%)
+
+MoveProb<-1/(1+exp(-log(19)*((seq(1,kmax)-movP50)/(movP95-movP50))))
+MatAge<-1/(1+exp(-log(19)*((seq(1,kmax)-mat50)/(mat95-mat50))))
+
+lenAtAge<-rep(0,kmax)
+wgtAtAge<-rep(0,kmax)
  for(k in 1:kmax)
   {
    lenAtAge[k]<-Linf*(1-exp(-K*k-t0))
    wgtAtAge[k]<-wtA*lenAtAge[k]^wtB
   }
 
-#==space and movement=========================
-SpaceR	<-10		# Rows in the grid space
-SpaceC	<-10		# cols in the grid spcae
-RecDist	<-1		# How is recruitment distributed over space? (1=equally,2=determined by adults,3=determined by habitat.csv)
-sdx		<-1.5		# sd of movement on x axis (in units of rows/columns)
-sdy		<-1.5		# sd of movement on y axis
-movP50	<-0		# probability moving by length (logistic; 50%; set both to 0 if all move)
-movP95	<-0		# probability of moving at length (95%)
+#==cross simulation ctl=========================
+SpaceR	<-SimCTL[grep('SpaceR',SimCTL[,2]),1]	    	# Rows in the grid space
+SpaceC	<-SimCTL[grep('SpaceC',SimCTL[,2]),1]  			# cols in the grid spcae
+burn		<-SimCTL[grep('burn',SimCTL[,2]),1]    		  # burn in for movement equilibration (use option "Graphs" in "Initpop" to see that population is thoroughly mixed)
+simTime <-SimCTL[grep('simTime',SimCTL[,2]),1]     	# time steps for projection
+yearMark<-SimCTL[grep('yearMark',SimCTL[,2]),1]	  	# number of time steps in a year
 
-MoveProb<-1/(1+exp(-log(19)*((seq(1,kmax)-movP50)/(movP95-movP50))))
-
-#==recruitment================================
-detRec	<-1		# deterministic recruitment?
-R0		<-1000	# Virgin recruitment
-steepness	<-0.85	# steepness
-det		<-1		# deterministic
-sigmaR	<-0.5		# variability around recruitment curve
-initDepl	<-1		# depletion at the beginning of 'fishery management' (calculate the fraction of R0 to put into the pop before allow movement to equilibrate)
-
-#== simulation duration======================
-burn		<-25		# burn in for movement equilibration (use option "Graphs" in "Initpop" to see that population is thoroughly mixed)
-simTime  	<-205		# time steps for projection
-yearMark	<-12		# number of time steps in a year
-
+Fleets
 #==fishery characteristics===================
-SizeLimit	<-0
+SizeLimit	<-Fleets[grep('movP95',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1))] 
 Sel50		<-1		# selectivity by length (9 by len)
 Sel95		<-2		# selectividad by len (13 by len)
 q		<-1		# fishery catchability coefficient (what fraction of the exploitable biomass in a patch is catchable)
@@ -145,7 +144,7 @@ if(PrintLifeHistory==T)
 #===========================================================
 
 #==population dynamics array tracking number at length (or age) in a patch by year
-SpaceNumAtLenT<-array(dim=c((simTime+burn),SpaceR,SpaceC,kmax))
+SpaceNumAtAgeT<-array(dim=c((simTime+burn),SpaceR,SpaceC,kmax))
 CatchByFisher<-matrix(ncol=simTime-burn,nrow=Fishers)
 BenefitAtTimeStep<-rep(0,simTime-burn)
 CostByFisher<-matrix(ncol=simTime-burn,nrow=Fishers)
@@ -178,12 +177,12 @@ if(length(season) < yearMark )
 Movement<-movArray(SpaceR,SpaceC,sdx,sdy)
 
 #==initialize population and allow movement to equilibrate
-SpaceNumAtLenT[1:burn,,,]<-InitialPop(R0,M,kmax,SpaceR,SpaceC,MoveProb,coords,Movement,Graphs=F,burn)
+SpaceNumAtAgeT[1:burn,,,]<-InitialPop(R0,M,kmax,SpaceR,SpaceC,MoveProb,coords,Movement,Graphs=F,burn)
 
 #==calculate virgin spawning biomass (1843.584)================
 tempSpBio<-rep(0,kmax)
 for(i in 1:kmax)
- tempSpBio[i]<-sum(SpaceNumAtLenT[burn,,,i]*MatAge[i])
+ tempSpBio[i]<-sum(SpaceNumAtAgeT[burn,,,i]*MatAge[i])
 VirSpBio<-sum(tempSpBio)
 
 #==begin projected harvest=================== 
@@ -205,14 +204,14 @@ for(timeStep in burn:simTime)
 { 
  tempBenefit<-array(dim=c(SpaceR,SpaceC,kmax))
  for(x in 1:length(FishSel))
-  tempBenefit[,,x]<-SpaceNumAtLenT[timeStep,,,x]*FishSel[x]*wgtAtAge[x]*price
+  tempBenefit[,,x]<-SpaceNumAtAgeT[timeStep,,,x]*FishSel[x]*wgtAtAge[x]*price
 
  #==in dollars (through selected kg of biomass), this is what a fisher would catch by going to a given patch
   BenefitPatch<-apply(tempBenefit,c(1,2),sum)
   BenefitPatch<-BenefitPatch*NoTakeZone
   NetBenefitPatch<-BenefitPatch-CostPatch
   if(timeStep==burn)OrigMaxNetBen<-max(NetBenefitPatch)
-  tempSNALT<-SpaceNumAtLenT[timeStep,,,]
+  tempSNALT<-SpaceNumAtAgeT[timeStep,,,]
 
 #==all fishers select their patch and fish
  if(any(timeStep%%12==season))
@@ -229,11 +228,11 @@ for(timeStep in burn:simTime)
    if(NetBenefitPatch[chosenPatch[1],chosenPatch[2]]>0)
    {
     #===FISHHHHH===#=><">====><"">====><""">===============================
-    potentialCatch<-sum(SpaceNumAtLenT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel*wgtAtAge)
+    potentialCatch<-sum(SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel*wgtAtAge)
     if(potentialCatch<=maxCapac)
      {
-       tempSNALT[chosenPatch[1],chosenPatch[2],]<-SpaceNumAtLenT[timeStep,chosenPatch[1],chosenPatch[2],] - 
-      SpaceNumAtLenT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel
+       tempSNALT[chosenPatch[1],chosenPatch[2],]<-SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],] - 
+      SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel
       CatchByFisher[f,timeStep-burn+1]<-potentialCatch
       CostByFisher[f,timeStep-burn+1]<-CostPatch[chosenPatch[1],chosenPatch[2]]
       print(timeStep)
@@ -247,16 +246,16 @@ for(timeStep in burn:simTime)
      for(x in 1:25)
       {
        useHarv<-(maxHarv+minHarv)/2
-       tempCat<-sum(SpaceNumAtLenT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel*useHarv*wgtAtAge)
+       tempCat<-sum(SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel*useHarv*wgtAtAge)
        if(tempCat<maxCapac)
         minHarv<-useHarv
        if(tempCat>maxCapac)
         maxHarv<-useHarv
        }
     #==apply harvest===============================================
-      tempSNALT[chosenPatch[1],chosenPatch[2],]<-SpaceNumAtLenT[timeStep,chosenPatch[1],chosenPatch[2],] - 
-       SpaceNumAtLenT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel*useHarv
-      CatchByFisher[f,timeStep-burn+1]<-sum(SpaceNumAtLenT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel*useHarv*wgtAtAge)
+      tempSNALT[chosenPatch[1],chosenPatch[2],]<-SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],] - 
+       SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel*useHarv
+      CatchByFisher[f,timeStep-burn+1]<-sum(SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel*useHarv*wgtAtAge)
       CostByFisher[f,timeStep-burn+1]<-CostPatch[chosenPatch[1],chosenPatch[2]]
      }
 
@@ -338,7 +337,7 @@ filled.contour(tempSNALT[,,2],main="postfishery, postmovement: age 2",zlim=c(0,9
       ani.record()
 }
  #==update popdym
- SpaceNumAtLenT[timeStep+1,,,]<-tempSNALT
+ SpaceNumAtAgeT[timeStep+1,,,]<-tempSNALT
 
 } # end timestep
 
