@@ -16,3 +16,10 @@ thisisdumb<-TRUE
 if(works==TRUE){print("Yay!!")}
 
 ## Modifying this code -- is it working?
+
+DanCanPlayFiddle<- TRUE
+
+if (DanCanPlayFiddle==T)
+{
+  show('WooHoo!')
+}
