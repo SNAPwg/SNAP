@@ -4,25 +4,33 @@
 #Collects and Aggregates (optional) 10 different kinds of data. 
 #######################################################################
 
-CollectData = function(Yr, nyrs, FFleet, Aggregate, fishPop,MPA){
+CollectData = function(timeStep, nyrs, FFleetvec, Aggregate, fishPop,MPA){
+  ### Conduct FD sampling for each fleet
+  for(FFleet in FFleetvec){
+    
+    ####Collect historical data for current year
+    histCatchDat <- CollectHistCatchData(Yr,nyrs,FFleet,histCatch_FD,histStartYr,Aggregate)
+    histCPUEDat <- CollectHistCPUEData(Yr,nyrs,FFleet,histEffort_FD,histStartYr,Aggregate)
+    
+    #### Collect FD data from these patches
+    FDCatch <- CollectFisheryCatch(Yr,FFleet,Aggregate)
+    FDCPUE <- CollectFisheryCPUE(Yr,FFleet,collEffortFD,Aggregate)
+    AgeFDMat <- CollectFisheryAges(Yr,FFleet,nAgeFD,collAgeFD,fishPop,FDsurvPatch)
+    SizeFDMat <- CollectFisherySizes(Yr,FFleet,nSizeFD,collSizeFD,FDsurvPatch,fishPop,minLen,maxLen,LengthBins,Sel50,Sel95)
+  }
   
-  ####Collect historical data for current year
-  histCatchDat <- CollectHistCatchData(Yr,nyrs,FFleet,histCatch_FD,histStartYr,Aggregate)
-  histCPUEDat <- CollectHistCPUEData(Yr,nyrs,FFleet,histEffort_FD,histStartYr,Aggregate)
+    ####Survey population
+    Survey <- GoSurvey(Yr,nyrs,fishPop,survq,survEffort,SurvPatch,Sel50FI,Sel95FI,FFleet,minLen,maxLen,LengthBins)
   
-  ####Survey population
-  Survey <- GoSurvey(Yr,nyrs,fishPop,survq,survEffort,SurvPatch,Sel50FI,Sel95FI,FFleet,minLen,maxLen,LengthBins)
-  
+    
+    
+    
+    
   #### Identify patches that have a catch to sample
   FDsurvPatch<-rep(0,length(collAgeFI))
   FDsurvPatch[colSums(as.matrix(FFleet$CatchatAge[Yr,,])) > 0] <- 1
   
-  #### Collect FD data from these patches
-  FDCatch <- CollectFisheryCatch(Yr,FFleet,Aggregate)
-  FDCPUE <- CollectFisheryCPUE(Yr,FFleet,collEffortFD,Aggregate)
-  AgeFDMat <- CollectFisheryAges(Yr,FFleet,nAgeFD,collAgeFD,fishPop,FDsurvPatch)
-  SizeFDMat <- CollectFisherySizes(Yr,FFleet,nSizeFD,collSizeFD,FDsurvPatch,fishPop,minLen,maxLen,LengthBins,Sel50,Sel95)
-  
+ 
   #### Identify patches that have a survey to sample
   FIsurvPatch <- rep(0,length(collAgeFI))
   FIsurvPatch[colSums(as.matrix(Survey$CatchatAge_FI)) > 0] <- 1
