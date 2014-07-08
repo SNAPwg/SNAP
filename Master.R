@@ -12,6 +12,8 @@ Graphs<-F
 GraphsFish<-T
 PrintLifeHistory<-T
 
+#read.csv("LifeHistory.csv")
+
 
 #==life history ==============================
 kmax	 	<-20		# max age
