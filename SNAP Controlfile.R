@@ -7,7 +7,7 @@
 
 # Run Parameters ----------------------------------------------------------
 
-RunName<- 'TimeStamp' #Batch name where run results will be stores. 'TimeStamp' creates a date stamped batch folder
+RunName<- 'Test' #Batch name where run results will be stores. 'TimeStamp' creates a date stamped batch folder
 
 Species<- 'All' #Which species you want to run.
 
@@ -17,10 +17,13 @@ RunTime<- 30 #The number of time steps each model run will be evaluated for
 
 #....
 
+FontSize<- 20 #Master fontsize for figures
 
-FontSize<- 14 #Master fontsize for figures
 Font<- 'Helvetica' #Master font for figures
 
+Colors<- colorRamps::blue2green
+
+palette(Colors(10))
 # Create Folders ----------------------------------------------------------
 
 InputFolder<- 'Inputs/' #Folder where model data (.csv etc.) are stored 
@@ -43,7 +46,7 @@ dir.create(ResultFolder)
 
 
 pdf(file=paste(FigureFolder,'Test.pdf'),family=Font,pointsize=FontSize)
-plot(1:10,pch=18)
+plot(1:10,pch=18,col=palette()[1:10])
 dev.off()
 
 
