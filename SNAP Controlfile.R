@@ -7,7 +7,7 @@
 
 # Run Parameters ----------------------------------------------------------
 
-RunName<- 'TimeStamp' #Batch name where run results will be stores. 'TimeStamp' creates a date stamped batch folder
+RunName<- 'Test' #Batch name where run results will be stores. 'TimeStamp' creates a date stamped batch folder
 
 Species<- 'All' #Which species you want to run.
 
@@ -17,8 +17,7 @@ RunTime<- 30 #The number of time steps each model run will be evaluated for
 
 #....
 
-
-FontSize<- 14 #Master fontsize for figures
+FontSize<- 20 #Master fontsize for figures
 Font<- 'Helvetica' #Master font for figures
 
 # Create Folders ----------------------------------------------------------
