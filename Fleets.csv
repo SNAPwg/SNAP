@@ -1,0 +1,15 @@
+#===fleet dynamics and management actions,
+0,# SizeLimit = indicates if a size limit is in place
+1,# Sel50 =selectivity by age (50%)
+2,# Sel95 = selectivity by age (95%)
+1,# q = fishery catchability
+"c(1,1)","# PortLc = location of the port of entry (x,y)"
+"c(1,2,3)","# season = months in which fishing is allowed (no season == seq(0,11) )"
+,
+4,# price (ex-vessel price per unit havest (kg)
+5,# costTrv ==cost to travel one patch
+50,# cost per unit effort fishing
+0.05,# discRate = discount rate
+20,# TimeHor = time horizon for evaluation of policy
+10,# Fishers = number of fishers in the fishery
+50,# maxCapac = max capcity of a single fisherman in a time step (kg) (can also be used as a triplimit or permit regulation tool)
