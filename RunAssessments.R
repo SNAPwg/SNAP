@@ -31,14 +31,6 @@ FigureFolder<- paste(Directory,'Figures/',sep='')
 
 ResultFolder<- paste(Directory,'Results/',sep='')
 
-for (d in 1:length(AvailableData)) #Read in available data
-{
-  eval(parse(text=paste(AvailableData[d],'<- read.csv(',"'",Directory,Fishery,'_',AvailableData[d],'.csv',"'",')',sep='')))
-  
-  eval(parse(text=paste('Plot',AvailableData[d],'(',AvailableData[d],')',sep='')))
-  
-}
-
 AssessmentResults<- as.data.frame(matrix(NA,nrow=length(Assessments)*10,ncol=9))
 
 colnames(AssessmentResults)<- c('Year','Method','SampleSize','Value','LowerCI','UpperCI','SD','Metric','Flag')
@@ -47,11 +39,7 @@ AssessmentResults$Year<- as.numeric(AssessmentResults$Year)
 
 Count<-0
 
-Fish$LHITol<- 0.6
-
-
 # Run Assessments ---------------------------------------------------------
-
 
 for (f in 1:length(Fleets))
 {
