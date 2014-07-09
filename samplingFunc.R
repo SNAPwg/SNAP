@@ -3,21 +3,18 @@
 # 
 #Collects and Aggregates (optional) 10 different kinds of data. 
 #######################################################################
-SpaceNumAtAgeT<-array(dim=c((simTime+burn),SpaceR,SpaceC,kmax))
-# Sample this in survey
 
-CatchByFisher<-matrix(ncol=simTime-burn,nrow=Fishers)
-totCatch <- sums catch by fisher
+#DataList gets set up ahead of time based on data collection parameters.
 
-CollectData = function(timeStep, simTime, burn, FFleetvec, Aggregate, fish, NoTakeZone, SpaceC, SpaceR){
+CollectData = function(timeStep, simTime, burn, FleetNums, Aggregate, fish, NoTakeZone, SpaceC, SpaceR, SpaceNumAtAgeT, SCAT,wgtAtAge, DataList){
   
   # Set some stuff up
   nyrs <- simTime-burn
-  Yr <- timeStep
+  Yr<-timeStep
   
   
   ### Conduct FD sampling for each fleet
-  for(FFleet in FFleetvec){
+  for(f in FleetNums){
     
     ####Collect historical data for current year
     histCatchDat <- CollectHistCatchData(Yr,nyrs,FFleet,histCatch_FD,histStartYr,Aggregate)
@@ -85,19 +82,37 @@ CollectData = function(timeStep, simTime, burn, FFleetvec, Aggregate, fish, NoTa
   DataOut$SizeFI <- SizeFI
   DataOut$VBDat <- VBDat
   
+### output Single object with 
   
   return(DataOut)
 }
 
 
-CollectHistCatchData = function(Yr,nyrs,FFleet,histCatch_FD,histStartYr,Aggregate){  
+CollectHistCatchData = function(Yr,nyrs,SCAT,histCatch_FD,histStartYr,Aggregate,histCatchError,fl,wgtAtAge){  
   dYr <- Yr-nyrs
   if (dYr == 1 & histCatch_FD == 1){
-    CatchHist_FD <- FFleet$totCatch[histStartYr:Yr,]  
+    ##### Error in reported catches is based on Bousquet et al. 2009
+    
+    #Catch at age is converted to catch at weight.
+    CatchAtWeight <- SCAT[,,,1:length(wgtAtAge),,] * wgtAtAge
+    
+    # True catches at age is sampled
+    SCATByFleet <- apply(CatchAtWeight[histStartYr:Yr,,,,,fl],5,sum)  #sums over fisher
+    SCTByFleet <- apply(SCATByFleet[histStartYr:Yr,,,],4,sum)  #sums over ages
+    
+    #Calculate Historical observation error in catch: If not reporting error, sigHistCatch = 0
+    obsError <- rnorm(n=length(histStartYr:Yr),mean = -(sigHistCatch)^2/2,sd = sigHistCatch)
+    obsevervedCatches <- SCTByFleet*exp(obsError)
+    
+    # Add in a potential reporting bias
+    biasedCatches <- obsevervedCatches + obsevervedCatches*catchBias #catchBias is (-1,1),with 0 = no Bias
+    CatchHist_FD <-  biasedCatches
+    
+    # Aggregate Historical Catches?
     if(Aggregate == FALSE){
       Final <- CatchHist_FD
     } else {   #sum across all patches for all years
-      Final <- rowSums(CatchHist_FD,na.rm=TRUE )
+      Final <- apply(CatchHist_FD,na.rm=TRUE,2:3,sum)
     }
   } else {Final <- NA}
   return(Final) 
