@@ -24,48 +24,21 @@ lenSD   <-Samp[grep('lenSD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]             
 
 #DataList gets set up ahead of time based on data collection parameters.
 
-CollectData = function(timeStep, simTime, burn, FleetN, Aggregate, SampStartYr, SampFreq, NoTakeZone, SpaceC, SpaceR, SpaceNumAtAgeT, SpaceCatAgeByFisher, SpaceEffort, wgtAtAge, DataList){
-  
-  # Set some stuff up
-  Yr<-timeStep
-  
+CollectData = function(timeStep, simTime, burn, FleetN, Aggregate, SampStartYr, SampFreq, NoTakeZone, SpaceNumAtAgeT, SpaceCatAgeByFisher, SpaceEffort, wgtAtAge, DataList){
+
   ### Conduct FD sampling for each fleet
   for(fl in FleetN){
     
     ####Collect historical data for current year
-    histCatchDat <- CollectHistCatchData(Yr,SampStartYr,SpaceCatAgeByFisher,histCatch_FD,histStartYr,Aggregate,histCatchError, sigHistCatch, catchBias, fl,wgtAtAge)
-    histCPUEDat <- CollectHistCPUEData(SpaceEffort,histEffort_FD,histStartYr,Aggregate,Yr,SampStartYr,SpaceCatAgeByFisher,histCatchError,sigHistCatch,catchBias,fl,wgtAtAge)
+    histCatchDat <- CollectHistCatchData(Yr=timeStep,SampStartYr,SpaceCatAgeByFisher,histCatch_FD,histStartYr,Aggregate,histCatchError, sigHistCatch, catchBias, fl,wgtAtAge)
+    histCPUEDat <- CollectHistCPUEData(SpaceEffort,histEffort_FD,histStartYr,Aggregate,Yr<-timeStep,SampStartYr,SpaceCatAgeByFisher,histCatchError,sigHistCatch,catchBias,fl,wgtAtAge)
     
     #### Collect FD data from these patches
-    FDCatch <- CollectFisheryCatch(Yr,FFleet,Aggregate)
+    FDCatch <- CollectFisheryCatch(Yr = timeStep,SpaceCatAgeByFisher,Aggregate,fl,wgtAtAge,sigHistCatch)
     FDCPUE <- CollectFisheryCPUE(Yr,FFleet,collEffortFD,Aggregate)
     AgeFDMat <- CollectFisheryAges(Yr,FFleet,nAgeFD,collAgeFD,fishPop,FDsurvPatch)
     SizeFDMat <- CollectFisherySizes(Yr,FFleet,nSizeFD,collSizeFD,FDsurvPatch,fishPop,minLen,maxLen,LengthBins,Sel50,Sel95)
   }
-  
-    ####Survey population
-    Survey <- GoSurvey(Yr,nyrs,fishPop,survq,survEffort,SurvPatch,Sel50FI,Sel95FI,FFleet,minLen,maxLen,LengthBins)
-  
-    
-    
-    
-    
-  #### Identify patches that have a catch to sample
-  FDsurvPatch<-rep(0,length(collAgeFI))
-  FDsurvPatch[colSums(as.matrix(FFleet$CatchatAge[Yr,,])) > 0] <- 1
-  
- 
-  #### Identify patches that have a survey to sample
-  FIsurvPatch <- rep(0,length(collAgeFI))
-  FIsurvPatch[colSums(as.matrix(Survey$CatchatAge_FI)) > 0] <- 1
-  
-  #### Collect FI data from these patches
-  CatchFI <- CollectCatchFI(Yr,nyrs,Survey$CatchatSize_FI,collCatchFI,FFleet,Aggregate,minLen, maxLen, LengthBins)
-  CPUEFI <- CollectSurvCPUE(Survey$CatchatSize_FI,survEffort,SurvPatch,collCatchFI,FFleet,Aggregate,minLen, maxLen, LengthBins)
-  numFI <- CollectSurvnum(Survey$CatchatSize_FI,survEffort,SurvPatch,collCatchFI,FFleet,Aggregate)
-  AgeFIMat <- CollectSurvAges(Yr,collAgeFI,fishPop,nAgeFI,Survey,FIsurvPatch)
-  SizeFIMat <- CollectSurvSize(collSizeFI,FIsurvPatch,minLen,mxLen,Sel50FI,Sel95FI,fishPop,LengthBins,Survey,nSizeFI)
-  VBDat <- CollectVBData(Yr,VBbins,collSizeFI,fishPop,survq,SurvPatch,Sel50VB,Sel95VB,minLen,maxLen,FIsurvPatch,numVB)
   
   if (Aggregate == FALSE){
     AgeFI <- AgeFIMat
@@ -98,10 +71,42 @@ CollectData = function(timeStep, simTime, burn, FleetN, Aggregate, SampStartYr, 
   DataOut$SizeFI <- SizeFI
   DataOut$VBDat <- VBDat
   
-### output Single object with 
+  ### output Single object with 
   
   return(DataOut)
 }
+
+###################################################
+# Below this is FI functuions to be updated soon.
+####################################################
+  
+}
+  
+    ####Survey population
+    Survey <- GoSurvey(Yr,nyrs,fishPop,survq,survEffort,SurvPatch,Sel50FI,Sel95FI,FFleet,minLen,maxLen,LengthBins)
+  
+    
+    
+    
+    
+  #### Identify patches that have a catch to sample
+  FDsurvPatch<-rep(0,length(collAgeFI))
+  FDsurvPatch[colSums(as.matrix(FFleet$CatchatAge[Yr,,])) > 0] <- 1
+  
+ 
+  #### Identify patches that have a survey to sample
+  FIsurvPatch <- rep(0,length(collAgeFI))
+  FIsurvPatch[colSums(as.matrix(Survey$CatchatAge_FI)) > 0] <- 1
+  
+  #### Collect FI data from these patches
+  CatchFI <- CollectCatchFI(Yr,nyrs,Survey$CatchatSize_FI,collCatchFI,FFleet,Aggregate,minLen, maxLen, LengthBins)
+  CPUEFI <- CollectSurvCPUE(Survey$CatchatSize_FI,survEffort,SurvPatch,collCatchFI,FFleet,Aggregate,minLen, maxLen, LengthBins)
+  numFI <- CollectSurvnum(Survey$CatchatSize_FI,survEffort,SurvPatch,collCatchFI,FFleet,Aggregate)
+  AgeFIMat <- CollectSurvAges(Yr,collAgeFI,fishPop,nAgeFI,Survey,FIsurvPatch)
+  SizeFIMat <- CollectSurvSize(collSizeFI,FIsurvPatch,minLen,mxLen,Sel50FI,Sel95FI,fishPop,LengthBins,Survey,nSizeFI)
+  VBDat <- CollectVBData(Yr,VBbins,collSizeFI,fishPop,survq,SurvPatch,Sel50VB,Sel95VB,minLen,maxLen,FIsurvPatch,numVB)
+  
+
 
 ##############################################################################
 # Historical Fishery Dependent Data Collection Functions
@@ -173,26 +178,25 @@ CollectHistCPUEData = function(SpaceEffort,histEffort_FD,histStartYr,Aggregate,Y
 ##############################################################################
 # Current Fishery Dependent Data Collection Functions
 ##############################################################################
-CollectFisheryCatch <- function(Yr,SCAT,Aggregate,fl){
+CollectFisheryCatch <- function(Yr,SpaceCatAgeByFisher,Aggregate,fl,wgtAtAge,sigHistCatch){
   #Catch at age is converted to catch at weight.
-  CatchAtWeightByFleet <- SCAT[Yr,,,1:length(wgtAtAge),,fl] * wgtAtAge
+  CatchAtWeight<-sweep(SpaceCatAgeByFisher[Yr,,,,,fl],MARGIN=3,wgtAtAge,`*`)
   
   # True catches at age is sampled -- arrays- indices you want to keep?
-  SCATByFleet <- apply(CatchAtWeightByFleet[,,,],1:3,sum)  #sums over fisher
-  SCTByFleet <- apply(SCATByFleet[,,],1:2,sum)  #sums over ages
+  SCATByFleet <- apply(CatchAtWeight[,,,],1:3,sum,na.rm=TRUE)  #sums over fisher
+  SCTByFleet <- apply(SCATByFleet[,,],1:2,sum,na.rm=TRUE)  #sums over ages
+  SCTByFleetNew <- replace(SCTByFleet[,],which(SCTByFleet[,]==0),NA)
   
   #Calculate Historical observation error in catch: If not reporting error, sigHistCatch = 0
-  obsError <- rnorm(n=1,mean = -(sigHistCatch)^2/2,sd = sigHistCatch)
-  obsevervedCatches <- SCTByFleet*exp(obsError)
+  #obsError <- rnorm(n=length(histStartYr:Yr),mean = -(sigHistCatch)^2/2,sd = sigHistCatch) ##### Error in reported catches is based on Bousquet et al. 2009
+  obsError <- rnorm(n=1, mean = 0,sd = sigHistCatch)
+  obsevervedCatches <- obsError + SCTByFleetNew
+  FisheryCatch <- obsevervedCatches 
   
-  # Add in a potential reporting bias
-  biasedCatches <- obsevervedCatches + obsevervedCatches*catchBias #catchBias is (-1,1),with 0 = no Bias
-  FisheryCatch<-  biasedCatches
- 
-  if (Aggregate == FALSE){
+  if (Aggregate == 0){
     Final <- FisheryCatch
   } else {
-    Final <- apply(FisheryCatch,1,sum,na.rm=TRUE)
+    Final <- sum(FisheryCatch,na.rm=TRUE)
   }
   return(Final)
 }
