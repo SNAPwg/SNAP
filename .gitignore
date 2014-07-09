@@ -4,3 +4,4 @@
 .Rproj
 **/*.pdf
 **/*.Rproj
+.Rapp.history
