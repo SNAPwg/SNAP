@@ -3,8 +3,19 @@
 # 
 #Collects and Aggregates (optional) 10 different kinds of data. 
 #######################################################################
+SpaceNumAtAgeT<-array(dim=c((simTime+burn),SpaceR,SpaceC,kmax))
+# Sample this in survey
 
-CollectData = function(timeStep, nyrs, FFleetvec, Aggregate, fishPop,MPA){
+CatchByFisher<-matrix(ncol=simTime-burn,nrow=Fishers)
+totCatch <- sums catch by fisher
+
+CollectData = function(timeStep, simTime, burn, FFleetvec, Aggregate, fish, NoTakeZone, SpaceC, SpaceR){
+  
+  # Set some stuff up
+  nyrs <- simTime-burn
+  Yr <- timeStep
+  
+  
   ### Conduct FD sampling for each fleet
   for(FFleet in FFleetvec){
     
@@ -82,7 +93,7 @@ CollectData = function(timeStep, nyrs, FFleetvec, Aggregate, fishPop,MPA){
 CollectHistCatchData = function(Yr,nyrs,FFleet,histCatch_FD,histStartYr,Aggregate){  
   dYr <- Yr-nyrs
   if (dYr == 1 & histCatch_FD == 1){
-    CatchHist_FD <- FFleet$Catch[histStartYr:Yr,]
+    CatchHist_FD <- FFleet$totCatch[histStartYr:Yr,]  
     if(Aggregate == FALSE){
       Final <- CatchHist_FD
     } else {   #sum across all patches for all years
