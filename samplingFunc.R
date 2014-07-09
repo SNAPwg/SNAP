@@ -143,12 +143,26 @@ CollectHistCPUEData = function(Yr,nyrs, SCAT,Effort,histEffort_FD,histStartYr,Ag
 ##############################################################################
 # Current Fishery Dependent Data Collection Functions
 ##############################################################################
-CollectFisheryCatch <- function(Yr,FFleet,Aggregate){
-  FisheryCatch <-FFleet$Catch[Yr,]
+CollectFisheryCatch <- function(Yr,SCAT,Aggregate,fl){
+  #Catch at age is converted to catch at weight.
+  CatchAtWeightByFleet <- SCAT[Yr,,,1:length(wgtAtAge),,fl] * wgtAtAge
+  
+  # True catches at age is sampled -- arrays- indices you want to keep?
+  SCATByFleet <- apply(CatchAtWeightByFleet[,,,],1:3,sum)  #sums over fisher
+  SCTByFleet <- apply(SCATByFleet[,,],1:2,sum)  #sums over ages
+  
+  #Calculate Historical observation error in catch: If not reporting error, sigHistCatch = 0
+  obsError <- rnorm(n=1,mean = -(sigHistCatch)^2/2,sd = sigHistCatch)
+  obsevervedCatches <- SCTByFleet*exp(obsError)
+  
+  # Add in a potential reporting bias
+  biasedCatches <- obsevervedCatches + obsevervedCatches*catchBias #catchBias is (-1,1),with 0 = no Bias
+  FisheryCatch<-  biasedCatches
+ 
   if (Aggregate == FALSE){
     Final <- FisheryCatch
   } else {
-    Final <- sum(FisheryCatch,na.rm=TRUE)
+    Final <- apply(FisheryCatch,1,sum,na.rm=TRUE)
   }
   return(Final)
 }
