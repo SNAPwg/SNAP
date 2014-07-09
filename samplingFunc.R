@@ -142,25 +142,29 @@ CollectHistCPUEData = function(SpaceEffort,histEffort_FD,histStartYr,Aggregate,Y
     
     # True catches at age is sampled -- arrays- indices you want to keep?
     SCATByFleet <- apply(CatchAtWeight[,,,,],1:4,sum,na.rm=TRUE)  #sums over fisher
-    SCTByFleet <- apply(SCATByFleet[histStartYr:Yr,,,],1:3,sum,na.rm=TRUE)  #sums over ages
+    SCTByFleet <- apply(SCATByFleet[(histStartYr+burn):(Yr+burn),,,],1:3,sum,na.rm=TRUE)  #sums over ages
     SCTByFleetNew <- replace(SCTByFleet[,,],which(SCTByFleet[,,]==0),NA)
     
     #Calculate Historical observation error in catch: If not reporting error, sigHistCatch = 0
     #obsError <- rnorm(n=length(histStartYr:Yr),mean = -(sigHistCatch)^2/2,sd = sigHistCatch) ##### Error in reported catches is based on Bousquet et al. 2009
-    obsError <- rnorm(n=length(histStartYr:Yr),mean = 0,sd = sigHistCatch)
+    obsError <- rnorm(n=length((histStartYr+burn):(Yr+burn)),mean = 0,sd = sigHistCatch)
     obsevervedCatches <- sweep(SCTByFleetNew,MARGIN=1,obsError,'+')
     
     # Add in a potential reporting bias
     biasedCatches <- obsevervedCatches + obsevervedCatches*catchBias #catchBias is (-1,1),with 0 = no Bias
     CatchHist_FD <-  biasedCatches
-    CatchHist_FD    
+    
+    # Eliminate Zeros in Effort to avoid dividing by zero
+    HistSpaceEffort <- SpaceEffort[(histStartYr+burn):(Yr+burn),,,fl]
+    NewSpaceEff <- replace(HistSpaceEffort[,,],which(HistSpaceEffort[,,]==0),NA)
     
     # Divide effort per patch
-    CPUEHist_FD <- CatchHist_FD  /Effort[histStartYr:Yr,,,fl]
-    if(Aggregate == FALSE){
-      Final <- CPUEHist_FD
+    if(Aggregate == 0){
+      Final <- CPUEHist_FD / NewSpaceEff
     } else {   #sum across all patches for all years
-      Final <- apply(CPUEHist_FD,na.rm=TRUE,1,sum)
+      AggCPUE <- apply(NewSpaceEff,1,sum,na.rm=TRUE)
+      AggCPUENew <- replace(AggCPUE, which(AggCPUE == 0), NA)
+      Final <- apply(CatchHist_FD,1,sum,na.rm=TRUE)/AggCPUENew 
     }
   } else {Final <- NA}
   return(Final)
