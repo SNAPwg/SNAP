@@ -13,7 +13,7 @@ PrintLifeHistory<-F
 
 Life<-read.csv("LifeHistory.csv")
 SimCTL<-read.csv("GrandSimCtl.csv")
-Fleets<-read.csv("Fleets.csv")
+Fleets<-read.csv("Fleets2.csv")
 
 FleetN<-ncol(Fleets)-1
 
@@ -72,27 +72,34 @@ SeasonCost	<-SimCTL[grep('SeasonCost',SimCTL[,2]),1]		# cost of enforcing a seas
 MPAtourism	<-SimCTL[grep('MPAtourism',SimCTL[,2]),1]		# average revenue generated per unit MPA per unit time for tourism in an MPA
 
 #==fishery characteristics===================
-SizeLimit	<-Fleets[grep('SizeLimit',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] 
-Sel50		  <-Fleets[grep('Sel50',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] 		# selectivity by length (9 by len)
-Sel95		  <-Fleets[grep('Sel95',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# selectividad by len (13 by len)
-q		      <-Fleets[grep('catchability',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]  		# fishery catchability coefficient (what fraction of the exploitable biomass in a patch is catchable)
-PortX 	  <-Fleets[grep('PortX',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] 	# location of the port of entry (x,y)
-PortY   	<-Fleets[grep('PortY',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]   # location of the port of entry (x,y)
-seasonN   <-Fleets[grep('season',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]  	# months in which fishing is allowed
+SizeLimit	<-as.numeric(Fleets[grep('SizeLimit',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] )
+Sel50		  <-as.numeric(Fleets[grep('Sel50',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] )		# selectivity by length (9 by len)
+Sel95		  <-as.numeric(Fleets[grep('Sel95',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]	)	# selectividad by len (13 by len)
+q		      <-as.numeric(Fleets[grep('catchability',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])  		# fishery catchability coefficient (what fraction of the exploitable biomass in a patch is catchable)
+PortX 	  <-as.numeric(Fleets[grep('PortX',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]) 	# location of the port of entry (x,y)
+PortY   	<-as.numeric(Fleets[grep('PortY',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] )  # location of the port of entry (x,y)
+seasonN   <-as.numeric(Fleets[grep('season',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] ) 	# months in which fishing is allowed
 
-#==how to make matrix for seasons when season lengths are different
-season<-matrix(seq(1,seasonN),ncol=FleetN)
+#==matrix for defining seasons when multiple fleets
+season<-matrix(NA,ncol=FleetN,nrow=yearMark)
+for(y in 1:FleetN)
+{cnt<-seasonN[y]
+ for(x in 1:cnt)
+  season[x,y]<-x
+} 
 PortLc<-c(PortX,PortY)
-FishSel<-matrix(q/(1+exp(-log(19)*((seq(1,kmax)-Sel50)/(Sel95-Sel50)))),ncol=FleetN)
+FishSel<-matrix(ncol=FleetN,nrow=kmax)
+for(y in 1:FleetN)
+ FishSel[,y]<-q[y]/(1+exp(-log(19)*((seq(1,kmax)-Sel50[y])/(Sel95[y]-Sel50[y]))))
 
 #==econ pars=================================
-price		  <-Fleets[grep('price',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# ex-vessel price per unit harvest (kg)
-costTrv	  <-Fleets[grep('costTrv',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# cost to travel one patch
-costFish	<-Fleets[grep('costFish',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# cost per unit effort fishing
-discRate	<-Fleets[grep('discRate',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]	# discount rate
-TimeHor	  <-Fleets[grep('TimeHor',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# time horizon for evaluation
-Fishers	  <-Fleets[grep('Fishers',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# number of fishers
-maxCapac	<-Fleets[grep('maxCapac',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# max capacity of a single fisherman in a timestep (kg) (can also be a 'trip limit'/permit implementation)
+price		  <-as.numeric(Fleets[grep('price',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# ex-vessel price per unit harvest (kg)
+costTrv	  <-as.numeric(Fleets[grep('costTrv',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# cost to travel one patch
+costFish	<-as.numeric(Fleets[grep('costFish',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# cost per unit effort fishing
+discRate	<-as.numeric(Fleets[grep('discRate',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])	# discount rate
+TimeHor	  <-as.numeric(Fleets[grep('TimeHor',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# time horizon for evaluation
+Fishers	  <-as.numeric(Fleets[grep('Fishers',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# number of fishers
+maxCapac	<-as.numeric(Fleets[grep('maxCapac',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# max capacity of a single fisherman in a timestep (kg) (can also be a 'trip limit'/permit implementation)
 
 #==dummy spatial matrix
 SpaceUse<-matrix(0,ncol=SpaceC,nrow=SpaceR)
@@ -139,12 +146,12 @@ if(PrintLifeHistory==T)
 
 #==population dynamics array tracking number at age in a patch by year
 SpaceNumAtAgeT<-array(dim=c((simTime),SpaceR,SpaceC,kmax))
-SpaceCatAgeByFisher<-array(dim=c(simTime-burn+1,SpaceR,SpaceC,kmax,Fishers,FleetN)) #in numbers
+SpaceCatAgeByFisher<-array(dim=c(simTime-burn+1,SpaceR,SpaceC,kmax,max(Fishers),FleetN)) #in numbers
 SpaceEffort<-array(0,dim=c(simTime-burn+1,SpaceR,SpaceC,FleetN))
 
-CatchByFisher<-array(dim=c(Fishers,simTime-burn+1,FleetN))
-ProfitByFisher<-array(dim=c(Fishers,simTime-burn+1,FleetN))
-CostByFisher<-array(dim=c(Fishers,simTime-burn+1,FleetN))
+CatchByFisher<-array(dim=c(max(Fishers),(simTime-burn+1),FleetN))
+ProfitByFisher<-array(dim=c(max(Fishers),(simTime-burn+1),FleetN))
+CostByFisher<-array(dim=c(max(Fishers),simTime-burn+1,FleetN))
 SpawningBiomass<-rep(0,simTime-burn)
 CostOfManagement<-rep(0,simTime-burn)
 
@@ -170,10 +177,7 @@ for(i in 1:kmax)
  tempSpBio[i]<-sum(SpaceNumAtAgeT[burn,,,i]*MatAge[i])
 VirSpBio<-sum(tempSpBio)
 
-#==fishers decide where to fish============
-#==initial costs
- Distance<-sqrt((row(SpaceUse)-PortX)^2 + (col(SpaceUse)-PortY)^2)
- CostPatch<-Distance*costTrv+costFish
+
 #==relate the cost of fishing to the number of fish in a patch?? (e.g. density is low == must fish harder)
 
     if(Graphs==T | GraphsFish==T)
@@ -188,9 +192,14 @@ for(timeStep in burn:simTime)
 { 
  for(flt in 1:FleetN)
  {
+   #==fishers decide where to fish============
+   #==initial costs
+   Distance<-sqrt((row(SpaceUse)-PortX[flt])^2 + (col(SpaceUse)-PortY[flt])^2)
+   CostPatch<-Distance*costTrv[flt]+costFish[flt]
+   
  tempBenefit<-array(dim=c(SpaceR,SpaceC,kmax))
- for(x in 1:length(FishSel))
-  tempBenefit[,,x]<-SpaceNumAtAgeT[timeStep,,,x]*FishSel[x,flt]*wgtAtAge[x]*price
+ for(x in 1:nrow(FishSel))
+  tempBenefit[,,x]<-SpaceNumAtAgeT[timeStep,,,x]*FishSel[x,flt]*wgtAtAge[x]*price[flt]
 
  #==in dollars (through selected kg of biomass), this is what a fisher would catch by going to a given patch
   BenefitPatch<-apply(tempBenefit,c(1,2),sum)
@@ -201,9 +210,9 @@ for(timeStep in burn:simTime)
 
 #==all fishers select their patch and fish
 
- if(any(timeStep%%12==season[,flt]))
+ if(!is.na(any(timeStep%%12==season[,flt])))
  {
-  for(f in 1:Fishers)
+  for(f in 1:Fishers[flt])
   {     
   #==find closest, highest value, fishable patch=================
   #==insert option for choosing randomly in a bivariate normal centered on the port of entry
@@ -216,7 +225,7 @@ for(timeStep in burn:simTime)
    {
     #===FISHHHHH===#=><">====><"">====><""">===============================
     potentialCatch<-sum(SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel[,flt]*wgtAtAge)
-    if(potentialCatch<=maxCapac)
+    if(potentialCatch<=maxCapac[flt])
      {
        tempSNALT[chosenPatch[1],chosenPatch[2],]<-SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],] - 
       SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel[,flt]
@@ -227,7 +236,7 @@ for(timeStep in burn:simTime)
       CostByFisher[f,timeStep-burn+1,flt]<-CostPatch[chosenPatch[1],chosenPatch[2]]
      }
    #==if they can catch more than capactity, they'll probably change selectivity and throw small ones back....think about that
-    if(potentialCatch>maxCapac)
+    if(potentialCatch>maxCapac[flt])
     {
      #===find harvest rate that would put the fisher at max capacity===
      maxHarv<-1
@@ -236,9 +245,9 @@ for(timeStep in burn:simTime)
       {
        useHarv<-(maxHarv+minHarv)/2
        tempCat<-sum(SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel[,flt]*useHarv*wgtAtAge)
-       if(tempCat<maxCapac)
+       if(tempCat<maxCapac[flt])
         minHarv<-useHarv
-       if(tempCat>maxCapac)
+       if(tempCat>maxCapac[flt])
         maxHarv<-useHarv
        }
     #==apply harvest===============================================
@@ -249,7 +258,7 @@ for(timeStep in burn:simTime)
        SpaceCatAgeByFisher[timeStep-burn+1,chosenPatch[1],chosenPatch[2],p,f,flt]<-SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],p]*FishSel[p,flt]*useHarv
 
       CostByFisher[f,timeStep-burn+1,flt]<-CostPatch[chosenPatch[1],chosenPatch[2]]
-      ProfitByFisher[f,timeStep-burn+1,flt]<-CatchByFisher[f,timeStep-burn+1,flt]*price - CostByFisher[f,timeStep-burn+1,flt]
+      ProfitByFisher[f,timeStep-burn+1,flt]<-CatchByFisher[f,timeStep-burn+1,flt]*price[flt] - CostByFisher[f,timeStep-burn+1,flt]
 
      }
 
@@ -258,8 +267,8 @@ for(timeStep in burn:simTime)
 
     #==update benefitPatch for next fisher=======================================
     tempBenefit<-array(dim=c(SpaceR,SpaceC,kmax))
-    for(x in 1:length(FishSel))
-     tempBenefit[,,x]<-tempSNALT[,,x]*FishSel[x,flt]*wgtAtAge[x]*price
+    for(x in 1:nrow(FishSel))
+     tempBenefit[,,x]<-tempSNALT[,,x]*FishSel[x,flt]*wgtAtAge[x]*price[flt]
     BenefitPatch<-apply(tempBenefit,c(1,2),sum)
     BenefitPatch<-BenefitPatch*NoTakeZone
     NetBenefitPatch<-BenefitPatch-CostPatch
@@ -348,9 +357,9 @@ filled.contour(tempSNALT[,,2],main="postfishery, postmovement: age 2",zlim=c(0,9
 #==costs of management
 if(sum(1-NoTakeZone)>1 & timeStep==burn)
   CostOfManagement[timeStep]<- CostOfManagement[timeStep] + MPAsunk
-if(SizeLimit>0)
+if(!is.na(SizeLimit[flt]))
   CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeSunk
-if(length(season) < yearMark ) 
+if(max(seasonN) < yearMark ) 
   CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SeasonSunk 
 
 CostOfManagement[timeStep]<- CostOfManagement[timeStep] + sum(1-NoTakeZone)*MPAcost
@@ -381,7 +390,7 @@ CostOfManagement[timeStep]<- CostOfManagement[timeStep] + (yearMark - length(sea
 
 
 
-
+dim(CatchByFisher)
 totCatch<-apply(CatchByFisher,2,sum,na.rm=T)
 totCost<-apply(CostByFisher,2,sum,na.rm=T)
 totProfit<-apply(ProfitByFisher,2,sum,na.rm=T)
