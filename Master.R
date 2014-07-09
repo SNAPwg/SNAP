@@ -1,6 +1,5 @@
 require(animation)
 require(caTools)
-setwd("C:/SNAP")
 source("lenwei.R")
 source("VisualizeMovement.R")
 source("movArray.R")
