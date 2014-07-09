@@ -3,25 +3,23 @@
 # 
 #Collects and Aggregates (optional) 10 different kinds of data. 
 #######################################################################
-SpaceNumAtAgeT<-array(dim=c((simTime+burn),SpaceR,SpaceC,kmax))
-# Sample this in survey
 
-CatchByFisher<-matrix(ncol=simTime-burn,nrow=Fishers)
-totCatch <- sums catch by fisher
+#DataList gets set up ahead of time based on data collection parameters.
 
-CollectData = function(timeStep, simTime, burn, FFleetvec, Aggregate, fish, NoTakeZone, SpaceC, SpaceR){
+CollectData = function(timeStep, simTime, burn, FleetNums, Aggregate, fish, NoTakeZone, SpaceC, SpaceR, SpaceNumAtAgeT, SpaceCatAgeByFisher, wgtAtAge, DataList){
   
   # Set some stuff up
   nyrs <- simTime-burn
-  Yr <- timeStep
+  Yr<-timeStep
   
   
   ### Conduct FD sampling for each fleet
-  for(FFleet in FFleetvec){
+  for(fl in FleetNums){
     
     ####Collect historical data for current year
-    histCatchDat <- CollectHistCatchData(Yr,nyrs,FFleet,histCatch_FD,histStartYr,Aggregate)
-    histCPUEDat <- CollectHistCPUEData(Yr,nyrs,FFleet,histEffort_FD,histStartYr,Aggregate)
+    histCatchDat <- CollectHistCatchData(Yr,nyrs,SCAT,histCatch_FD,histStartYr,Aggregate,histCatchError,fl,wgtAtAge)
+      #Cody will track fishers per patch per time step, this is our current proxy for effort
+    histCPUEDat <- CollectHistCPUEData(Yr,nyrs,Effort,histEffort_FD,histStartYr,Aggregate)
     
     #### Collect FD data from these patches
     FDCatch <- CollectFisheryCatch(Yr,FFleet,Aggregate)
@@ -85,36 +83,169 @@ CollectData = function(timeStep, simTime, burn, FFleetvec, Aggregate, fish, NoTa
   DataOut$SizeFI <- SizeFI
   DataOut$VBDat <- VBDat
   
+### output Single object with 
   
   return(DataOut)
 }
 
-
-CollectHistCatchData = function(Yr,nyrs,FFleet,histCatch_FD,histStartYr,Aggregate){  
+##############################################################################
+# Historical Fishery Dependent Data Collection Functions
+##############################################################################
+CollectHistCatchData = function(Yr,nyrs,SCAT,histCatch_FD,histStartYr,Aggregate,histCatchError,fl,wgtAtAge){  
   dYr <- Yr-nyrs
   if (dYr == 1 & histCatch_FD == 1){
-    CatchHist_FD <- FFleet$totCatch[histStartYr:Yr,]  
+    ##### Error in reported catches is based on Bousquet et al. 2009
+    
+    #Catch at age is converted to catch at weight.
+    CatchAtWeight <- SCAT[,,,1:length(wgtAtAge),,] * wgtAtAge
+    
+    # True catches at age is sampled -- arrays- indices you want to keep?
+    SCATByFleet <- apply(CatchAtWeight[histStartYr:Yr,,,,,fl],5,sum)  #sums over fisher
+    SCTByFleet <- apply(SCATByFleet[histStartYr:Yr,,,],4,sum)  #sums over ages
+    
+    #Calculate Historical observation error in catch: If not reporting error, sigHistCatch = 0
+    obsError <- rnorm(n=length(histStartYr:Yr),mean = -(sigHistCatch)^2/2,sd = sigHistCatch)
+    obsevervedCatches <- SCTByFleet*exp(obsError)
+    
+    # Add in a potential reporting bias
+    biasedCatches <- obsevervedCatches + obsevervedCatches*catchBias #catchBias is (-1,1),with 0 = no Bias
+    CatchHist_FD <-  biasedCatches
+    
+    # Aggregate Historical Catches?
     if(Aggregate == FALSE){
       Final <- CatchHist_FD
     } else {   #sum across all patches for all years
-      Final <- rowSums(CatchHist_FD,na.rm=TRUE )
+      Final <- apply(CatchHist_FD,na.rm=TRUE,1,sum)
     }
   } else {Final <- NA}
   return(Final) 
 }
 
-CollectHistCPUEData = function(Yr,nyrs,FFleet,histEffort_FD,histStartYr,Aggregate){  
+CollectHistCPUEData = function(Yr,nyrs, SCAT,Effort,histEffort_FD,histStartYr,Aggregate,fl){  
   dYr <- Yr-nyrs  
   if (dYr == 1 & histEffort_FD == 1){
-    CPUEHist_FD <- FFleet$Catch[histStartYr:Yr,]/FFleet$effort[histStartYr:Yr,]
+    # calculate catch using historical catch method above
+    
+    ###COPY AND PASTE FROM ABOVE WHEN THIS WORKS####
+    CatchHist_FD    
+    
+    # Divide effort per patch
+    CPUEHist_FD <- CatchHist_FD  /Effort[histStartYr:Yr,,,fl]
     if(Aggregate == FALSE){
       Final <- CPUEHist_FD
     } else {   #sum across all patches for all years
-      Final <- rowSums(FFleet$Catch[histStartYr:Yr,],na.rm=TRUE)/ rowSums(FFleet$effort[histStartYr:Yr,],na.rm=TRUE)
+      Final <- apply(CPUEHist_FD,na.rm=TRUE,1,sum)
     }
   } else {Final <- NA}
   return(Final)
 }
+
+##############################################################################
+# Current Fishery Dependent Data Collection Functions
+##############################################################################
+CollectFisheryCatch <- function(Yr,FFleet,Aggregate){
+  FisheryCatch <-FFleet$Catch[Yr,]
+  if (Aggregate == FALSE){
+    Final <- FisheryCatch
+  } else {
+    Final <- sum(FisheryCatch,na.rm=TRUE)
+  }
+  return(Final)
+}
+
+CollectFisheryCPUE <- function(Yr,FFleet,collEffortFD,Aggregate){
+  FisheryCatch <- FFleet$Catch[Yr,]
+  Eff_Temp <- FFleet$effort[Yr,]*collEffortFD
+  Effort_FD <- replace(Eff_Temp, Eff_Temp == 0, NA)  #avoiding divide by zero problem in unsampled patches
+  CPUE_FD <- FisheryCatch/Effort_FD   ##Collect CPUE if effort is collected in patch. 
+  if (Aggregate == FALSE){
+    Final <- CPUE_FD
+  } else {
+    Final <- sum(FisheryCatch,na.rm=TRUE)/sum(Effort_FD,na.rm=TRUE)
+  }
+  return(Final)
+}
+
+#Collect Age Data
+CollectFisheryAges <- function(Yr,FFleet,nAgeFD,collAgeFD,fishPop,FDsurvPatch){
+  CatchatAge_FD <-  as.matrix(round(FFleet$CatchatAge[Yr,,]))  #turns the catch at age into whole numbers
+  AgeDatHolder <- matrix(NA,nrow=max(nAgeFD,1),ncol=length(collAgeFD))
+  for(patch in 1:length(collAgeFD)){
+    if ((FDsurvPatch * collAgeFD)[patch] == 1){ 
+      AgeDatHolder[,patch]<-sample(1:fishPop$fish$maxAge,nAgeFD,replace=TRUE,prob=(CatchatAge_FD[,patch]/sum(CatchatAge_FD[,patch])))
+    }
+  }
+  return(AgeDatHolder)
+}
+
+#Collect FD Size Data 
+CollectFisherySizes <- function(Yr,FFleet,nSizeFD,collSizeFD,FDsurvPatch,fishPop,minLen,maxLen,LengthBins,sel50,sel95){
+  CatchatAge_FD <-  as.matrix(round(FFleet$CatchatAge[Yr,,]))  #turns the catch at age into whole numbers
+  AgeDatHolder <- matrix(NA,nrow=max(nSizeFD,1),ncol=length(collSizeFD))
+  for(patch in 1:length(collSizeFD)){
+    if ((FDsurvPatch * collSizeFD)[patch] == 1){ 
+      AgeDatHolder[,patch]<-sample(1:fishPop$fish$maxAge,nSizeFD,replace=TRUE,prob=(CatchatAge_FD[,patch]/sum(CatchatAge_FD[,patch])))
+    }
+  }
+  
+  # Create age-length probability matrix
+  LengthVec = seq(minLen, maxLen, by= VBbins)   #changed to make 1cm length bins
+  LenMids = seq(LengthVec[1] +((LengthVec[2]-LengthVec[1])/2), by=(LengthVec[2]-LengthVec[1]), length=length(LengthVec)-1)
+  AgeLenProbMat = matrix(0, nrow=length(LengthVec)-1, ncol=fishPop$fish$maxAge) 
+  for (i in seq_along(1:fishPop$fish$maxAge)) 
+  {
+    for (lengthclass in seq_along(LengthVec)[-1])
+    {  
+      length_cat = lengthclass-1   #Calculate the probability of falling into each length bin
+      if(length_cat==1) AgeLenProbMat[length_cat,i] = pnorm(LengthVec[lengthclass], fishPop$fish$length[i],  fishPop$fish$lengthSD[i])     
+      if(length_cat>1) AgeLenProbMat[length_cat,i] = pnorm(LengthVec[lengthclass], fishPop$fish$length[i],  fishPop$fish$lengthSD[i]) - pnorm(LengthVec[lengthclass-1], fishPop$fish$length[i], fishPop$fish$lengthSD[i])       
+    }
+    # For each Age normalize across lengths
+    AgeLenProbMat[,i] = AgeLenProbMat[,i]/sum(AgeLenProbMat[,i])
+  }
+  
+  ##Calculate the selectivity at length for each length bin
+  SelLengthVec = plogis(LenMids, location=sel50, scale=(sel95-sel50)/log(19))
+  #SelLengthVec = rep(1,34)
+  
+  ###Create matrix of normalized probabilities of being above the size and selected.
+  Prob2Mat = AgeLenProbMat* SelLengthVec    #SelLengthMat
+  
+  ## Need to re-normalized across all lengths after selectivity was accounted for 
+  NormProbMat = Prob2Mat
+  ColSums = apply(Prob2Mat, 2, sum)
+  for (i in 1:fishPop$fish$maxAge) {
+    NormProbMat[,i] = Prob2Mat[,i]/ColSums[i] # Normalise probabilities
+  }
+  
+  SizeDatHolder<- matrix(NA,nrow=dim(AgeDatHolder)[1],ncol=dim(AgeDatHolder)[2])
+  for(patch in 1:length(collSizeFD)){
+    if ((FDsurvPatch * collSizeFD)[patch] == 1){
+      TempSizeFreq <- rep(NA,length(1:fishPop$fish$maxAge))
+      TempMat <-  Prob2Mat 
+      for(a in 1:fishPop$fish$maxAge){
+        Na <- AgeDatHolder[which(AgeDatHolder[,patch]==a),patch]
+        TempMat[,a] <- NormProbMat[,a] * length(Na)
+      }
+      TempSizeFreq <- rowSums(TempMat)
+      TempSizeDat <- NULL
+      for(i in 1:length(LenMids)){
+        TempSizeDat <- append( TempSizeDat, rep(LenMids[i],round(TempSizeFreq[i])))
+      }
+      if(length(TempSizeDat) > dim(SizeDatHolder)[1]){TempSizeDat <- TempSizeDat[1:dim(SizeDatHolder)[1]] }
+      SizeDatHolder[1:length(TempSizeDat),patch] <- TempSizeDat
+    }
+  }
+  return(SizeDatHolder)
+}
+
+
+
+
+
+##############################################################################
+# Survey/ Fishery Independent Data Collection Functions
+##############################################################################
 
 #Determine Catch at age from FI survey
 GoSurvey = function(Yr,nyrs,fishPop,survq,survEffort,SurvPatch,sel50,sel95,FFleet,minLen,maxLen,LengthBins){
@@ -382,100 +513,4 @@ CollectSurvSize <- function(collSizeFI,FIsurvPatch,minLen,mxLen,Sel50FI,Sel95FI,
   return(SizeDatHolder)
 }
 
-
-CollectFisheryCatch <- function(Yr,FFleet,Aggregate){
-  FisheryCatch <-FFleet$Catch[Yr,]
-  if (Aggregate == FALSE){
-    Final <- FisheryCatch
-  } else {
-    Final <- sum(FisheryCatch,na.rm=TRUE)
-  }
-  return(Final)
-}
-
-CollectFisheryCPUE <- function(Yr,FFleet,collEffortFD,Aggregate){
-  FisheryCatch <- FFleet$Catch[Yr,]
-  Eff_Temp <- FFleet$effort[Yr,]*collEffortFD
-  Effort_FD <- replace(Eff_Temp, Eff_Temp == 0, NA)  #avoiding divide by zero problem in unsampled patches
-  CPUE_FD <- FisheryCatch/Effort_FD   ##Collect CPUE if effort is collected in patch. 
-  if (Aggregate == FALSE){
-    Final <- CPUE_FD
-  } else {
-    Final <- sum(FisheryCatch,na.rm=TRUE)/sum(Effort_FD,na.rm=TRUE)
-  }
-  return(Final)
-}
-
-#Collect Age Data
-CollectFisheryAges <- function(Yr,FFleet,nAgeFD,collAgeFD,fishPop,FDsurvPatch){
-  CatchatAge_FD <-  as.matrix(round(FFleet$CatchatAge[Yr,,]))  #turns the catch at age into whole numbers
-  AgeDatHolder <- matrix(NA,nrow=max(nAgeFD,1),ncol=length(collAgeFD))
-  for(patch in 1:length(collAgeFD)){
-    if ((FDsurvPatch * collAgeFD)[patch] == 1){ 
-      AgeDatHolder[,patch]<-sample(1:fishPop$fish$maxAge,nAgeFD,replace=TRUE,prob=(CatchatAge_FD[,patch]/sum(CatchatAge_FD[,patch])))
-    }
-  }
-  return(AgeDatHolder)
-}
-
-#Collect FD Size Data 
-CollectFisherySizes <- function(Yr,FFleet,nSizeFD,collSizeFD,FDsurvPatch,fishPop,minLen,maxLen,LengthBins,sel50,sel95){
-  CatchatAge_FD <-  as.matrix(round(FFleet$CatchatAge[Yr,,]))  #turns the catch at age into whole numbers
-  AgeDatHolder <- matrix(NA,nrow=max(nSizeFD,1),ncol=length(collSizeFD))
-  for(patch in 1:length(collSizeFD)){
-    if ((FDsurvPatch * collSizeFD)[patch] == 1){ 
-      AgeDatHolder[,patch]<-sample(1:fishPop$fish$maxAge,nSizeFD,replace=TRUE,prob=(CatchatAge_FD[,patch]/sum(CatchatAge_FD[,patch])))
-    }
-  }
-  
-  # Create age-length probability matrix
-  LengthVec = seq(minLen, maxLen, by= VBbins)   #changed to make 1cm length bins
-  LenMids = seq(LengthVec[1] +((LengthVec[2]-LengthVec[1])/2), by=(LengthVec[2]-LengthVec[1]), length=length(LengthVec)-1)
-  AgeLenProbMat = matrix(0, nrow=length(LengthVec)-1, ncol=fishPop$fish$maxAge) 
-  for (i in seq_along(1:fishPop$fish$maxAge)) 
-  {
-    for (lengthclass in seq_along(LengthVec)[-1])
-    {  
-      length_cat = lengthclass-1   #Calculate the probability of falling into each length bin
-      if(length_cat==1) AgeLenProbMat[length_cat,i] = pnorm(LengthVec[lengthclass], fishPop$fish$length[i],  fishPop$fish$lengthSD[i])     
-      if(length_cat>1) AgeLenProbMat[length_cat,i] = pnorm(LengthVec[lengthclass], fishPop$fish$length[i],  fishPop$fish$lengthSD[i]) - pnorm(LengthVec[lengthclass-1], fishPop$fish$length[i], fishPop$fish$lengthSD[i])       
-    }
-    # For each Age normalize across lengths
-    AgeLenProbMat[,i] = AgeLenProbMat[,i]/sum(AgeLenProbMat[,i])
-  }
-  
-  ##Calculate the selectivity at length for each length bin
-  SelLengthVec = plogis(LenMids, location=sel50, scale=(sel95-sel50)/log(19))
-  #SelLengthVec = rep(1,34)
-  
-  ###Create matrix of normalized probabilities of being above the size and selected.
-  Prob2Mat = AgeLenProbMat* SelLengthVec    #SelLengthMat
-  
-  ## Need to re-normalized across all lengths after selectivity was accounted for 
-  NormProbMat = Prob2Mat
-  ColSums = apply(Prob2Mat, 2, sum)
-  for (i in 1:fishPop$fish$maxAge) {
-    NormProbMat[,i] = Prob2Mat[,i]/ColSums[i] # Normalise probabilities
-  }
-  
-  SizeDatHolder<- matrix(NA,nrow=dim(AgeDatHolder)[1],ncol=dim(AgeDatHolder)[2])
-  for(patch in 1:length(collSizeFD)){
-    if ((FDsurvPatch * collSizeFD)[patch] == 1){
-      TempSizeFreq <- rep(NA,length(1:fishPop$fish$maxAge))
-      TempMat <-  Prob2Mat 
-      for(a in 1:fishPop$fish$maxAge){
-        Na <- AgeDatHolder[which(AgeDatHolder[,patch]==a),patch]
-        TempMat[,a] <- NormProbMat[,a] * length(Na)
-      }
-      TempSizeFreq <- rowSums(TempMat)
-      TempSizeDat <- NULL
-      for(i in 1:length(LenMids)){
-        TempSizeDat <- append( TempSizeDat, rep(LenMids[i],round(TempSizeFreq[i])))
-      }
-      if(length(TempSizeDat) > dim(SizeDatHolder)[1]){TempSizeDat <- TempSizeDat[1:dim(SizeDatHolder)[1]] }
-      SizeDatHolder[1:length(TempSizeDat),patch] <- TempSizeDat
-    }
-  }
-  return(SizeDatHolder)
-}
 
