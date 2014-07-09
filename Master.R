@@ -1,6 +1,5 @@
 require(animation)
 require(caTools)
-setwd("C:/SNAP")
 source("lenwei.R")
 source("VisualizeMovement.R")
 source("movArray.R")
@@ -15,6 +14,8 @@ PrintLifeHistory<-F
 Life<-read.csv("LifeHistory.csv")
 SimCTL<-read.csv("GrandSimCtl.csv")
 Fleets<-read.csv("Fleets.csv")
+
+FleetN<-ncol(Fleets)-1
 
 #==life history ==============================
 kmax	 	<-Life[grep('kmax',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]              # maximum age
@@ -92,21 +93,18 @@ TimeHor	  <-Fleets[grep('TimeHor',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]	
 Fishers	  <-Fleets[grep('Fishers',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# number of fishers
 maxCapac	<-Fleets[grep('maxCapac',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# max capacity of a single fisherman in a timestep (kg) (can also be a 'trip limit'/permit implementation)
 
-#==spatial matrix (0=open access, 1=TURF, 2=NTZ)
-#==read in a csv with the appropriate letters denoted for the different uses
+#==dummy spatial matrix
 SpaceUse<-matrix(0,ncol=SpaceC,nrow=SpaceR)
 
-#==read in csv that give habitat quality, determine movement by habitat quality
-#==read csv that shows MPAs, if any
+
+#==read csv that shows MPAs (0=open access, 1=TURF, 2=NTZ)
 #NoTakeZone<-read.csv("notakezone40.csv",header=F)
 #NoTakeZone<-read.csv("notakezone80.csv",header=F)
 NoTakeZone<-read.csv("notakezoneNULL.csv",header=F)
 
-#==add in dispersal .csv too
+#==read in csv that give habitat quality, determine movement by habitat quality
 habitat<-read.csv("habitatNULL.csv",header=F)
-#is.numeric(habitat)
-#habitat<-read.csv("habitatNULL.csv",header=F)
-
+#habitat<-read.csv("habitat.csv",header=F)
 
 if(PrintLifeHistory==T)
 {
@@ -133,21 +131,23 @@ if(PrintLifeHistory==T)
 
  filled.contour(matrix(as.numeric(unlist(NoTakeZone)),ncol=SpaceC),y=seq(1,SpaceR),x=seq(1,SpaceC)) 
  mtext(side=3,"No take zones (0)")
- #==identify the MPAs and mark them on the graph
-
 }
 
 #===========================================================
 #== Begin simulations====================================
 #===========================================================
 
-#==population dynamics array tracking number at length (or age) in a patch by year
+#==population dynamics array tracking number at age in a patch by year
 SpaceNumAtAgeT<-array(dim=c((simTime),SpaceR,SpaceC,kmax))
-CatchByFisher<-matrix(ncol=simTime-burn,nrow=Fishers)
-ProfitByFisher<-matrix(ncol=simTime-burn,nrow=Fishers)
-CostByFisher<-matrix(ncol=simTime-burn,nrow=Fishers)
+SpaceCatAgeByFisher<-array(dim=c(simTime-burn+1,SpaceR,SpaceC,kmax,Fishers,FleetN))
+
+CatchByFisher<-matrix(ncol=simTime-burn+1,nrow=Fishers)
+ProfitByFisher<-matrix(ncol=simTime-burn+1,nrow=Fishers)
+CostByFisher<-matrix(ncol=simTime-burn+1,nrow=Fishers)
 SpawningBiomass<-rep(0,simTime-burn)
 CostOfManagement<-rep(0,simTime-burn)
+
+
 
 #==index for spatial area==========================
  coords<-NULL
@@ -164,7 +164,6 @@ Movement<-movArray(SpaceR,SpaceC,sdx,sdy)
 
 #==initialize population and allow movement to equilibrate
 SpaceNumAtAgeT[1:burn,,,]<-InitialPop(R0,M,kmax,SpaceR,SpaceC,MoveProb,coords,Movement,Graphs=F,burn)
-SpaceNumAtAgeT[burn,,,]
 
 #==calculate virgin spawning biomass (1843.584)================
 tempSpBio<-rep(0,kmax)
@@ -177,7 +176,7 @@ VirSpBio<-sum(tempSpBio)
 #==initial costs
  Distance<-sqrt((row(SpaceUse)-PortX)^2 + (col(SpaceUse)-PortY)^2)
  CostPatch<-Distance*costTrv+costFish
-#==relate the cost of fishing to the number of fish in a patch??
+#==relate the cost of fishing to the number of fish in a patch?? (e.g. density is low == must fish harder)
 
     if(Graphs==T | GraphsFish==T)
      {
@@ -201,6 +200,7 @@ for(timeStep in burn:simTime)
 
 #==all fishers select their patch and fish
  if(any(timeStep%%12==season))
+ #for(w in 1:ncol(Fleet))
  {for(f in 1:Fishers)
   {     
   #==find closest, highest value, fishable patch=================
@@ -298,6 +298,7 @@ SpawningBiomass[timeStep]<-sum(tempSpBio)
      }
 
 #==movement depends on the probability of moving at age
+(SpaceR,SpaceC,inputSNALT,MoveProb,Movement)
 temp1<-tempSNALT
 for(age in 1:kmax)
   {
@@ -325,6 +326,11 @@ filled.contour(tempSNALT[,,2],main="postfishery, postmovement: age 2",zlim=c(0,9
  #==update popdym
  SpaceNumAtAgeT[timeStep+1,,,]<-tempSNALT
 
+
+#===========================================================================
+#== Calculate the cost of management for a given scenario
+#===========================================================================
+
 #==costs of management
 if(sum(1-NoTakeZone)>1 & timeStep==burn)
   CostOfManagement[timeStep]<- CostOfManagement[timeStep] + MPAsunk
@@ -336,15 +342,31 @@ if(length(season) < yearMark )
 CostOfManagement[timeStep]<- CostOfManagement[timeStep] + sum(1-NoTakeZone)*MPAcost
 CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeCost
 CostOfManagement[timeStep]<- CostOfManagement[timeStep] + (yearMark - length(season))* SeasonCost
+
+#==INSERT SAMPLING FUNCTION
+ #==pass catch at age in year by patch (fish dependent)
+ #==pass SpaceNumAtAgeT (independent)
+#==INSERT ASSESSMENT FUNCTION
+ #==Call DPSA, mean length, density ratios, 
+ #==harvest control rules
+#==adjust management
+  #increase or decrease MPA size
+  #increase or decrease fishers
+  #increase or decrease capacity
+  #increase or decrease size limit through fishery selectivity
+  #increase or decrease season
+  #eliminate a fleet
+  # first do non-adaptive runs where assessment is not required--set it and forget it
+  # then do adaptive management with uncertainty around management targets
+  # what's the probability of getting it 'right' in the non-adaptive runs?
+  # how does that compare to the
+  
+ # what needs to be output and how
+
 } # end timestep
 
 
 
-#===========================================================================
-#== Calculate the cost of management for a given scenario
-#===========================================================================
-# need size of MPA, whether a size limit is imposed, length of season,
-# 
 
 totCatch<-apply(CatchByFisher,2,sum,na.rm=T)
 totCost<-apply(CostByFisher,2,sum,na.rm=T)
