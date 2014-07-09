@@ -121,7 +121,7 @@ CollectHistCatchData = function(Yr,nyrs,SCAT,histCatch_FD,histStartYr,Aggregate,
   return(Final) 
 }
 
-CollectHistCPUEData = function(Yr,nyrs, SCAT,Effort,histEffort_FD,histStartYr,Aggregate,fl){  
+CollectHistCPUEData = function(Yr, nyrs, SCAT,Effort,histEffort_FD,histStartYr,Aggregate,fl){  
   dYr <- Yr-nyrs  
   if (dYr == 1 & histEffort_FD == 1){
     # calculate catch using historical catch method above
@@ -167,9 +167,14 @@ CollectFisheryCatch <- function(Yr,SCAT,Aggregate,fl){
   return(Final)
 }
 
-CollectFisheryCPUE <- function(Yr,FFleet,collEffortFD,Aggregate){
-  FisheryCatch <- FFleet$Catch[Yr,]
-  Eff_Temp <- FFleet$effort[Yr,]*collEffortFD
+CollectFisheryCPUE <- function(Yr,SCAT,Effort, fl, collEffortFD,Aggregate){
+  
+  #####PASTE in CATCH CODE FROM ABOVE WHEN IT WORKS###########
+  
+  FisheryCatch[t,x,y]
+  
+  ## effort data collected from each patch?
+  Eff_Temp <-Effort[Yr,,,fl]*collEffortFD ## should end up with effort in eahc patch, with 0s where there is no data
   Effort_FD <- replace(Eff_Temp, Eff_Temp == 0, NA)  #avoiding divide by zero problem in unsampled patches
   CPUE_FD <- FisheryCatch/Effort_FD   ##Collect CPUE if effort is collected in patch. 
   if (Aggregate == FALSE){
