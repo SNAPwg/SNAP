@@ -4,22 +4,37 @@
 #Collects and Aggregates (optional) 10 different kinds of data. 
 #######################################################################
 
+
+#### Code to read in Sampling Paranters 
+Samp <- read.csv("SamplingParams.csv")
+
+#==Sampling Parameters ==============================
+histCatch_FD <-Samp[grep('histCatch_FD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]              # Collect historical Catch Data?
+histEffort_FD	 	<-Samp[grep('histEffort_FD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]           	  # Collect historical CPUE Data?
+histStartYr	 	<-Samp[grep('histStartYr',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	            # time step in which historical data was first collected
+Aggregate   	 	<-Samp[grep('Aggregate',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	# Aggregate data over space? 1 for yes, 2 for no.
+SampStartYr	 	<-Samp[grep('SampStartYr',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]            	# time step in which current sampling program begins
+SampFreq		    <-Samp[grep('SampFreq',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]       	# Sampling Frequency
+sigHistCatch  	 	<-Samp[grep('sigHistCatch',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]         		  	# Standard deviation of observation error on total catches. If no error, sigHistCatch=0.
+catchBias	  	<-Samp[grep('catchBias',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	              # Bias in catch reporting. Scalar between (-1, 1). 0 equals no bias.
+wtB	  	<-Samp[grep('wtB',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	              # weight B
+mat50		<-Samp[grep('mat50',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]             # age at 50% maturity
+mat95		<-Samp[grep('mat95',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]             # age at 95% maturity 
+lenSD   <-Samp[grep('lenSD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]             # standard deviation of length at age
+
 #DataList gets set up ahead of time based on data collection parameters.
 
-CollectData = function(timeStep, simTime, burn, FleetNums, Aggregate, fish, NoTakeZone, SpaceC, SpaceR, SpaceNumAtAgeT, SpaceCatAgeByFisher, wgtAtAge, DataList){
+CollectData = function(timeStep, simTime, burn, FleetN, Aggregate, SampStartYr, SampFreq, NoTakeZone, SpaceC, SpaceR, SpaceNumAtAgeT, SpaceCatAgeByFisher, SpaceEffort, wgtAtAge, DataList){
   
   # Set some stuff up
-  nyrs <- simTime-burn
   Yr<-timeStep
   
-  
   ### Conduct FD sampling for each fleet
-  for(fl in FleetNums){
+  for(fl in FleetN){
     
     ####Collect historical data for current year
-    histCatchDat <- CollectHistCatchData(Yr,nyrs,SCAT,histCatch_FD,histStartYr,Aggregate,histCatchError,fl,wgtAtAge)
-      #Cody will track fishers per patch per time step, this is our current proxy for effort
-    histCPUEDat <- CollectHistCPUEData(Yr,nyrs,Effort,histEffort_FD,histStartYr,Aggregate)
+    histCatchDat <- CollectHistCatchData(Yr,SampStartYr,SpaceCatAgeByFisher,histCatch_FD,histStartYr,Aggregate,histCatchError, sigHistCatch, catchBias, fl,wgtAtAge)
+    histCPUEDat <- CollectHistCPUEData(SpaceEffort,histEffort_FD,histStartYr,Aggregate,Yr,SampStartYr,SpaceCatAgeByFisher,histCatchError,sigHistCatch,catchBias,fl,wgtAtAge)
     
     #### Collect FD data from these patches
     FDCatch <- CollectFisheryCatch(Yr,FFleet,Aggregate)
@@ -91,42 +106,53 @@ CollectData = function(timeStep, simTime, burn, FleetNums, Aggregate, fish, NoTa
 ##############################################################################
 # Historical Fishery Dependent Data Collection Functions
 ##############################################################################
-CollectHistCatchData = function(Yr,nyrs,SCAT,histCatch_FD,histStartYr,Aggregate,histCatchError,fl,wgtAtAge){  
-  dYr <- Yr-nyrs
-  if (dYr == 1 & histCatch_FD == 1){
-    ##### Error in reported catches is based on Bousquet et al. 2009
-    
+CollectHistCatchData = function(Yr,SampStartYr,SpaceCatAgeByFisher,histCatch_FD,histStartYr,Aggregate,histCatchError, sigHistCatch, catchBias, fl,wgtAtAge){  
+  if (Yr == SampStartYr+burn & histCatch_FD == 1){
     #Catch at age is converted to catch at weight.
-    CatchAtWeight <- SCAT[,,,1:length(wgtAtAge),,] * wgtAtAge
-    
+    CatchAtWeight<-sweep(SpaceCatAgeByFisher[,,,,,fl],MARGIN=4,wgtAtAge,`*`)
+
     # True catches at age is sampled -- arrays- indices you want to keep?
-    SCATByFleet <- apply(CatchAtWeight[histStartYr:Yr,,,,,fl],5,sum)  #sums over fisher
-    SCTByFleet <- apply(SCATByFleet[histStartYr:Yr,,,],4,sum)  #sums over ages
+    SCATByFleet <- apply(CatchAtWeight[,,,,],1:4,sum,na.rm=TRUE)  #sums over fisher
+    SCTByFleet <- apply(SCATByFleet[(histStartYr+burn):(Yr+burn),,,],1:3,sum,na.rm=TRUE)  #sums over ages
+    SCTByFleetNew <- replace(SCTByFleet[,,],which(SCTByFleet[,,]==0),NA)
     
     #Calculate Historical observation error in catch: If not reporting error, sigHistCatch = 0
-    obsError <- rnorm(n=length(histStartYr:Yr),mean = -(sigHistCatch)^2/2,sd = sigHistCatch)
-    obsevervedCatches <- SCTByFleet*exp(obsError)
+    #obsError <- rnorm(n=length(histStartYr:Yr),mean = -(sigHistCatch)^2/2,sd = sigHistCatch) ##### Error in reported catches is based on Bousquet et al. 2009
+    obsError <- rnorm(n=length((histStartYr+burn):(Yr+burn)),mean = 0,sd = sigHistCatch)
+    obsevervedCatches <- sweep(SCTByFleetNew,MARGIN=1,obsError,'+')
     
     # Add in a potential reporting bias
     biasedCatches <- obsevervedCatches + obsevervedCatches*catchBias #catchBias is (-1,1),with 0 = no Bias
     CatchHist_FD <-  biasedCatches
     
     # Aggregate Historical Catches?
-    if(Aggregate == FALSE){
+    if(Aggregate == 0){
       Final <- CatchHist_FD
     } else {   #sum across all patches for all years
-      Final <- apply(CatchHist_FD,na.rm=TRUE,1,sum)
+      Final <- apply(CatchHist_FD,1,sum,na.rm=TRUE)
     }
   } else {Final <- NA}
   return(Final) 
 }
 
-CollectHistCPUEData = function(Yr, nyrs, SCAT,Effort,histEffort_FD,histStartYr,Aggregate,fl){  
-  dYr <- Yr-nyrs  
-  if (dYr == 1 & histEffort_FD == 1){
-    # calculate catch using historical catch method above
+CollectHistCPUEData = function(SpaceEffort,histEffort_FD,histStartYr,Aggregate,Yr,SampStartYr,SpaceCatAgeByFisher,histCatchError,sigHistCatch,catchBias,fl,wgtAtAge){  
+  if (Yr == SampStartYr+burn & histCatch_FD == 1){
+    #Catch at age is converted to catch at weight.
+    CatchAtWeight<-sweep(SpaceCatAgeByFisher[,,,,,fl],MARGIN=4,wgtAtAge,`*`)
     
-    ###COPY AND PASTE FROM ABOVE WHEN THIS WORKS####
+    # True catches at age is sampled -- arrays- indices you want to keep?
+    SCATByFleet <- apply(CatchAtWeight[,,,,],1:4,sum,na.rm=TRUE)  #sums over fisher
+    SCTByFleet <- apply(SCATByFleet[histStartYr:Yr,,,],1:3,sum,na.rm=TRUE)  #sums over ages
+    SCTByFleetNew <- replace(SCTByFleet[,,],which(SCTByFleet[,,]==0),NA)
+    
+    #Calculate Historical observation error in catch: If not reporting error, sigHistCatch = 0
+    #obsError <- rnorm(n=length(histStartYr:Yr),mean = -(sigHistCatch)^2/2,sd = sigHistCatch) ##### Error in reported catches is based on Bousquet et al. 2009
+    obsError <- rnorm(n=length(histStartYr:Yr),mean = 0,sd = sigHistCatch)
+    obsevervedCatches <- sweep(SCTByFleetNew,MARGIN=1,obsError,'+')
+    
+    # Add in a potential reporting bias
+    biasedCatches <- obsevervedCatches + obsevervedCatches*catchBias #catchBias is (-1,1),with 0 = no Bias
+    CatchHist_FD <-  biasedCatches
     CatchHist_FD    
     
     # Divide effort per patch
@@ -167,7 +193,7 @@ CollectFisheryCatch <- function(Yr,SCAT,Aggregate,fl){
   return(Final)
 }
 
-CollectFisheryCPUE <- function(Yr,SCAT,Effort, fl, collEffortFD,Aggregate){
+CollectFisheryCPUE <- function(Yr,SCAT,SpaceEffort, fl, collEffortFD,Aggregate){
   
   #####PASTE in CATCH CODE FROM ABOVE WHEN IT WORKS###########
   
