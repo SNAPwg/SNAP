@@ -1,6 +1,6 @@
 require(animation)
 require(caTools)
-setwd("C:/Users/Cody/Desktop/SpatialOM/")
+setwd("C:/SNAP")
 source("lenwei.R")
 source("VisualizeMovement.R")
 source("movArray.R")
@@ -9,37 +9,37 @@ source("Recruitment.R")
 #rm(list=ls())
 
 Graphs<-F
-GraphsFish<-T
-PrintLifeHistory<-T
+GraphsFish<-F
+PrintLifeHistory<-F
 
 Life<-read.csv("LifeHistory.csv")
 SimCTL<-read.csv("GrandSimCtl.csv")
 Fleets<-read.csv("Fleets.csv")
 
 #==life history ==============================
-kmax	 	<-Life[grep('kmax',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]              # maximum age
-kmat	 	<-Life[grep('kmat',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]           	  # age at maturity
-kmin	 	<-Life[grep('kmin',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]	            # minimium size
-M   	 	<-Life[grep('natural mortality',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]	# natural mortality
-Linf	 	<-Life[grep('Linf',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]            	# VonBert Linf
-K		    <-Life[grep('VonBert K',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]       	# VonBert K
-t0  	 	<-Life[grep('t0',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]         		  	# VonBert t0
-wtA	  	<-Life[grep('wtA',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]	              #  weight A
-wtB	  	<-Life[grep('wtB',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]	              # weight B
-mat50		<-Life[grep('mat50',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]             # age at 50% maturity
-mat95		<-Life[grep('mat95',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]             # age at 95% maturity 
-lenSD   <-Life[grep('lenSD',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]             # standard deviation of length at age
+kmax	 	<-Life[grep('kmax',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]              # maximum age
+kmat	 	<-Life[grep('kmat',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]           	  # age at maturity
+kmin	 	<-Life[grep('kmin',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]	            # minimium size
+M   	 	<-Life[grep('natural mortality',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]	# natural mortality
+Linf	 	<-Life[grep('Linf',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]            	# VonBert Linf
+K		    <-Life[grep('VonBert K',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]       	# VonBert K
+t0  	 	<-Life[grep('t0',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]         		  	# VonBert t0
+wtA	  	<-Life[grep('wtA',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]	              #  weight A
+wtB	  	<-Life[grep('wtB',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]	              # weight B
+mat50		<-Life[grep('mat50',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # age at 50% maturity
+mat95		<-Life[grep('mat95',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # age at 95% maturity 
+lenSD   <-Life[grep('lenSD',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # standard deviation of length at age
 
 #==recruitment================================
-detRec  <-Life[grep('detRec',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]        	    # deterministic recruitment?
-R0	  	<-Life[grep('R0',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]             		# Virgin recruitment
-steepness<-Life[grep('steepness',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]      		# steepness
-sigmaR	<-Life[grep('sigmaR',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]            	# variability around recruitment curve
-RecDist <-Life[grep('RecDist',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]            # How is recruitment distributed over space? (1=equally,2=determined by adults,3=determined by habitat.csv)
-sdx		  <-Life[grep('sdx',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]              	# sd of movement on x axis (in units of rows/columns)
-sdy	  	<-Life[grep('sdy',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]              	# sd of movement on y axis
-movP50	<-Life[grep('movP50',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]             # probability moving by length (logistic; 50%; set both to 0 if all move)
-movP95	<-Life[grep('movP95',Life[,ncol(Life)]),seq(1,ncol(Life)-1))]             # probability of moving at length (95%)
+detRec  <-Life[grep('detRec',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]        	    # deterministic recruitment?
+R0	  	<-Life[grep('R0',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             		# Virgin recruitment
+steepness<-Life[grep('steepness',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]      		# steepness
+sigmaR	<-Life[grep('sigmaR',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]            	# variability around recruitment curve
+RecDist <-Life[grep('RecDist',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]            # How is recruitment distributed over space? (1=equally,2=determined by adults,3=determined by habitat.csv)
+sdx		  <-Life[grep('sdx',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]              	# sd of movement on x axis (in units of rows/columns)
+sdy	  	<-Life[grep('sdy',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]              	# sd of movement on y axis
+movP50	<-Life[grep('movP50',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # probability moving by length (logistic; 50%; set both to 0 if all move)
+movP95	<-Life[grep('movP95',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # probability of moving at length (95%)
 
 MoveProb<-1/(1+exp(-log(19)*((seq(1,kmax)-movP50)/(movP95-movP50))))
 MatAge<-1/(1+exp(-log(19)*((seq(1,kmax)-mat50)/(mat95-mat50))))
@@ -59,37 +59,38 @@ burn		<-SimCTL[grep('burn',SimCTL[,2]),1]    		  # burn in for movement equilibr
 simTime <-SimCTL[grep('simTime',SimCTL[,2]),1]     	# time steps for projection
 yearMark<-SimCTL[grep('yearMark',SimCTL[,2]),1]	  	# number of time steps in a year
 
-Fleets
+#==management costs==========================
+MPAsunk     <-SimCTL[grep('MPAsunk',SimCTL[,2]),1]  	# start up cost of enforcing an MPA
+MPAcost	    <-SimCTL[grep('MPAcost',SimCTL[,2]),1]		# cost of maintaining a unit of MPA per unit time
+SizeSunk	  <-SimCTL[grep('SizeSunk',SimCTL[,2]),1]		# start up cost of enforcing a size limit
+SizeCost    <-SimCTL[grep('SizeCost',SimCTL[,2]),1]		# cost of enforcing a size limit per unit of time per port
+SeasonSunk	<-SimCTL[grep('SeasonSunk',SimCTL[,2]),1]		# start up cost of enforcing a season
+SeasonCost	<-SimCTL[grep('SeasonCost',SimCTL[,2]),1]		# cost of enforcing a season per unit of time
+
+#==management auxilliary benefits======================
+MPAtourism	<-SimCTL[grep('MPAtourism',SimCTL[,2]),1]		# average revenue generated per unit MPA per unit time for tourism in an MPA
+
 #==fishery characteristics===================
-SizeLimit	<-Fleets[grep('movP95',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1))] 
-Sel50		<-1		# selectivity by length (9 by len)
-Sel95		<-2		# selectividad by len (13 by len)
-q		<-1		# fishery catchability coefficient (what fraction of the exploitable biomass in a patch is catchable)
-PortLc	<-c(1,1)	# location of the port of entry (x,y)
-season	<-c(1,2,3)	# months in which fishing is allowed
-#season	<-seq(0,11)	# no season
+SizeLimit	<-Fleets[grep('SizeLimit',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] 
+Sel50		  <-Fleets[grep('Sel50',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] 		# selectivity by length (9 by len)
+Sel95		  <-Fleets[grep('Sel95',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# selectividad by len (13 by len)
+q		      <-Fleets[grep('catchability',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]  		# fishery catchability coefficient (what fraction of the exploitable biomass in a patch is catchable)
+PortX 	  <-Fleets[grep('PortX',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] 	# location of the port of entry (x,y)
+PortY   	<-Fleets[grep('PortY',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]   # location of the port of entry (x,y)
+seasonN   <-Fleets[grep('season',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]  	# months in which fishing is allowed
+
+season<-seq(1,seasonN)
+PortLc<-c(PortX,PortY)
 FishSel<-q/(1+exp(-log(19)*((seq(1,kmax)-Sel50)/(Sel95-Sel50))))
 
 #==econ pars=================================
-price		<-4		# ex-vessel price per unit harvest (kg)
-costTrv	<-5		# cost to travel one patch
-costFish	<-50		# cost per unit effort fishing
-discRate	<-0.05	# discount rate
-TimeHor	<-20		# time horizon for evaluation
-Fishers	<-10		# number of fishers
-maxCapac	<-50		# max capacity of a single fisherman in a timestep (kg) (can also be a 'trip limit'/permit implementation)
-
-#==management costs==========================
-MPAsunk	<-100		# start up cost of enforcing an MPA
-MPAcost	<-10		# cost of maintaining a unit of MPA per unit time
-SizeSunk	<-20		# start up cost of enforcing a size limit
-SizeCost <-2		# cost of enforcing a size limit per unit of time per port
-SeasonSunk	<-50		# start up cost of enforcing a season
-SeasonCost	<-1		# cost of enforcing a season per unit of time
-
-#==management auxilliary benefits======================
-MPAtourism	<-30		# average revenue generated per unit MPA per unit time for tourism in an MPA
-
+price		  <-Fleets[grep('price',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# ex-vessel price per unit harvest (kg)
+costTrv	  <-Fleets[grep('costTrv',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# cost to travel one patch
+costFish	<-Fleets[grep('costFish',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# cost per unit effort fishing
+discRate	<-Fleets[grep('discRate',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]	# discount rate
+TimeHor	  <-Fleets[grep('TimeHor',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# time horizon for evaluation
+Fishers	  <-Fleets[grep('Fishers',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# number of fishers
+maxCapac	<-Fleets[grep('maxCapac',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]		# max capacity of a single fisherman in a timestep (kg) (can also be a 'trip limit'/permit implementation)
 
 #==spatial matrix (0=open access, 1=TURF, 2=NTZ)
 #==read in a csv with the appropriate letters denoted for the different uses
@@ -102,7 +103,7 @@ SpaceUse<-matrix(0,ncol=SpaceC,nrow=SpaceR)
 NoTakeZone<-read.csv("notakezoneNULL.csv",header=F)
 
 #==add in dispersal .csv too
-habitat<-read.csv("habitat.csv",header=F)
+habitat<-read.csv("habitatNULL.csv",header=F)
 #is.numeric(habitat)
 #habitat<-read.csv("habitatNULL.csv",header=F)
 
@@ -110,7 +111,6 @@ habitat<-read.csv("habitat.csv",header=F)
 if(PrintLifeHistory==T)
 {
  #==print out maturity, selectivity, growth, etc.
- dev.new()
  par(mfrow=c(2,1),mar=c(0.1,4,.1,4),oma=c(4,0,0,0))
  plot(MatAge,type="l",xaxt='n',las=2,ylab='')
  mtext(side=2,"Probability",line=3)
@@ -128,11 +128,9 @@ if(PrintLifeHistory==T)
  mtext(side=2,"Length (cm)",line=2)
  mtext(side=1,"Age (yr)",line=2)
  
- dev.new()
  filled.contour(matrix(as.numeric(unlist(habitat)),ncol=SpaceC),y=seq(1,SpaceR),x=seq(1,SpaceC)) 
  mtext(side=3,"Habitat quality")
 
- dev.new()
  filled.contour(matrix(as.numeric(unlist(NoTakeZone)),ncol=SpaceC),y=seq(1,SpaceR),x=seq(1,SpaceC)) 
  mtext(side=3,"No take zones (0)")
  #==identify the MPAs and mark them on the graph
@@ -144,24 +142,12 @@ if(PrintLifeHistory==T)
 #===========================================================
 
 #==population dynamics array tracking number at length (or age) in a patch by year
-SpaceNumAtAgeT<-array(dim=c((simTime+burn),SpaceR,SpaceC,kmax))
+SpaceNumAtAgeT<-array(dim=c((simTime),SpaceR,SpaceC,kmax))
 CatchByFisher<-matrix(ncol=simTime-burn,nrow=Fishers)
-BenefitAtTimeStep<-rep(0,simTime-burn)
+ProfitByFisher<-matrix(ncol=simTime-burn,nrow=Fishers)
 CostByFisher<-matrix(ncol=simTime-burn,nrow=Fishers)
 SpawningBiomass<-rep(0,simTime-burn)
 CostOfManagement<-rep(0,simTime-burn)
-
-#==costs of management
-if(sum(1-NoTakeZone)>1 & timeStep==burn)
- CostOfManagement[timeStep]<- CostOfManagement[timeStep] + MPAsunk
-if(SizeLimit>0)
- CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeSunk
-if(length(season) < yearMark ) 
- CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SeasonSunk 
-
- CostOfManagement[timeStep]<- CostOfManagement[timeStep] + sum(1-NoTakeZone)*MPAcost
- CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeCost
- CostOfManagement[timeStep]<- CostOfManagement[timeStep] + (yearMark - length(season))* SeasonCost
 
 #==index for spatial area==========================
  coords<-NULL
@@ -178,6 +164,7 @@ Movement<-movArray(SpaceR,SpaceC,sdx,sdy)
 
 #==initialize population and allow movement to equilibrate
 SpaceNumAtAgeT[1:burn,,,]<-InitialPop(R0,M,kmax,SpaceR,SpaceC,MoveProb,coords,Movement,Graphs=F,burn)
+SpaceNumAtAgeT[burn,,,]
 
 #==calculate virgin spawning biomass (1843.584)================
 tempSpBio<-rep(0,kmax)
@@ -188,18 +175,17 @@ VirSpBio<-sum(tempSpBio)
 #==begin projected harvest=================== 
 #==fishers decide where to fish============
 #==initial costs
- Distance<-sqrt((row(SpaceUse)-PortLc[1])^2 + (col(SpaceUse)-PortLc[2])^2)
+ Distance<-sqrt((row(SpaceUse)-PortX)^2 + (col(SpaceUse)-PortY)^2)
  CostPatch<-Distance*costTrv+costFish
 #==relate the cost of fishing to the number of fish in a patch??
 
     if(Graphs==T | GraphsFish==T)
      {
-      setwd("C:/Users/Cody/Desktop/spatial gif")
-      dev.new(height=7,width=7)
-	ani.record(reset=TRUE)
+      #setwd("C:/Users/Cody/Desktop/spatial gif")
+      #dev.new(height=7,width=7)
+	    ani.record(reset=TRUE)
       ani.options(interval=.01)	
      }
-#for(timeStep in burn:(burn+10) )
 for(timeStep in burn:simTime) 
 { 
  tempBenefit<-array(dim=c(SpaceR,SpaceC,kmax))
@@ -235,7 +221,6 @@ for(timeStep in burn:simTime)
       SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel
       CatchByFisher[f,timeStep-burn+1]<-potentialCatch
       CostByFisher[f,timeStep-burn+1]<-CostPatch[chosenPatch[1],chosenPatch[2]]
-      print(timeStep)
      }
    #==if they can catch more than capactity, they'll probably change selectivity and throw small ones back....think about that
     if(potentialCatch>maxCapac)
@@ -257,6 +242,7 @@ for(timeStep in burn:simTime)
        SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel*useHarv
       CatchByFisher[f,timeStep-burn+1]<-sum(SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],]*FishSel*useHarv*wgtAtAge)
       CostByFisher[f,timeStep-burn+1]<-CostPatch[chosenPatch[1],chosenPatch[2]]
+      ProfitByFisher[f,timeStep-burn+1]<-CatchByFisher[f,timeStep-burn+1]*price - CostByFisher[f,timeStep-burn+1]
      }
 
     #==update benefitPatch for next fisher=======================================
@@ -275,7 +261,7 @@ for(timeStep in burn:simTime)
     }
    }	#end fishers
   }
-BenefitAtTimeStep[(timeStep-burn+1)]<-sum(BenefitPatch)
+
 #==natural mortality (depends on timestep size)
   tempSNALT<-tempSNALT*exp(-(M/yearMark))
 
@@ -339,6 +325,17 @@ filled.contour(tempSNALT[,,2],main="postfishery, postmovement: age 2",zlim=c(0,9
  #==update popdym
  SpaceNumAtAgeT[timeStep+1,,,]<-tempSNALT
 
+#==costs of management
+if(sum(1-NoTakeZone)>1 & timeStep==burn)
+  CostOfManagement[timeStep]<- CostOfManagement[timeStep] + MPAsunk
+if(SizeLimit>0)
+  CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeSunk
+if(length(season) < yearMark ) 
+  CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SeasonSunk 
+
+CostOfManagement[timeStep]<- CostOfManagement[timeStep] + sum(1-NoTakeZone)*MPAcost
+CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeCost
+CostOfManagement[timeStep]<- CostOfManagement[timeStep] + (yearMark - length(season))* SeasonCost
 } # end timestep
 
 
@@ -351,18 +348,21 @@ filled.contour(tempSNALT[,,2],main="postfishery, postmovement: age 2",zlim=c(0,9
 
 totCatch<-apply(CatchByFisher,2,sum,na.rm=T)
 totCost<-apply(CostByFisher,2,sum,na.rm=T)
-dev.new()
+totProfit<-apply(ProfitByFisher,2,sum,na.rm=T)
+
 par(mfrow=c(4,1),mar=c(.1,4,.1,.1))
 plot(totCatch,type="b",xaxt='n',las=2)
 plot(totCost,lty=2,type="b",xaxt='n',las=2)
+plot(totProfit,lty=2,type="b",xaxt='n',las=2)
+lines(CostOfManagement,lty=2,type="b",col=2)
 plot(SpawningBiomass[burn:simTime],type="b",xaxt='n',las=2,ylab="SpawningBio",ylim=c(0,max(SpawningBiomass[burn:simTime],na.rm=T)))
-#plot(BenefitAtTimeStep,type='b',xaxt='n',las=2,ylim=c(0,max(BenefitAtTimeStep)))
+
 #plot(CostofManagement,type='b',las=2,ylim=c(0,max(CostofManagement)))
 #plot(Profit,type='b',las=2,ylim=c(0,max(Profit)))
 
 #ani.options(interval=.15)	
 #ani.replay()
-#saveHTML(ani.replay(), img.name = "record_plot_old",outdir = getwd(),interval=0.05)
+#saveHTML(ani.replay(), img.name = "record_plot_oldf",outdir = getwd(),interval=0.05)
 
 	# size limit
 	# 
