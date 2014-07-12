@@ -34,12 +34,12 @@ CollectData = function(timeStep, simTime, burn, FleetN, Aggregate, SampStartYr, 
     histCPUEDat <- CollectHistCPUEData(SpaceEffort,histEffort_FD,histStartYr,Aggregate,Yr<-timeStep,SampStartYr,SpaceCatAgeByFisher,histCatchError,sigHistCatch,catchBias,fl,wgtAtAge)
     
     #### Collect FD data from these patches
-    FDCatch <- CollectFisheryCatch(Yr = timeStep,SpaceCatAgeByFisher,Aggregate,fl,wgtAtAge,sigHistCatch)
-    FDCPUE <- CollectFisheryCPUE(Yr,FFleet,collEffortFD,Aggregate)
+    FDCatch <- CollectFisheryCatch(Yr = timeStep,SpaceCatAgeByFisher,Aggregate,fl,wgtAtAge,sigHistCatch,collCatchFD)
+    FDCPUE <- CollectFisheryCPUE(Yr,SpaceCatAgeByFisher,SpaceEffort, fl, collEffortFD,Aggregate,wgtAtAge, sigHistCatch)
     AgeFDMat <- CollectFisheryAges(Yr,FFleet,nAgeFD,collAgeFD,fishPop,FDsurvPatch)
     SizeFDMat <- CollectFisherySizes(Yr,FFleet,nSizeFD,collSizeFD,FDsurvPatch,fishPop,minLen,maxLen,LengthBins,Sel50,Sel95)
   }
-  
+ 
   if (Aggregate == FALSE){
     AgeFI <- AgeFIMat
     SizeFI <- SizeFIMat
@@ -178,7 +178,7 @@ CollectHistCPUEData = function(SpaceEffort,histEffort_FD,histStartYr,Aggregate,Y
 ##############################################################################
 # Current Fishery Dependent Data Collection Functions
 ##############################################################################
-CollectFisheryCatch <- function(Yr,SpaceCatAgeByFisher,Aggregate,fl,wgtAtAge,sigHistCatch){
+CollectFisheryCatch <- function(Yr,SpaceCatAgeByFisher,Aggregate,fl,wgtAtAge,sigHistCatch,collCatchFD){
   #Catch at age is converted to catch at weight.
   CatchAtWeight<-sweep(SpaceCatAgeByFisher[Yr,,,,,fl],MARGIN=3,wgtAtAge,`*`)
   
@@ -201,18 +201,27 @@ CollectFisheryCatch <- function(Yr,SpaceCatAgeByFisher,Aggregate,fl,wgtAtAge,sig
   return(Final)
 }
 
-CollectFisheryCPUE <- function(Yr,SCAT,SpaceEffort, fl, collEffortFD,Aggregate){
+CollectFisheryCPUE <- function(Yr,SpaceCatAgeByFisher,SpaceEffort, fl, collEffortFD,Aggregate,wgtAtAge, sigHistCatch){
   
-  #####PASTE in CATCH CODE FROM ABOVE WHEN IT WORKS###########
+  #Catch at age is converted to catch at weight.
+  CatchAtWeight<-sweep(SpaceCatAgeByFisher[Yr,,,,,fl],MARGIN=3,wgtAtAge,`*`)
   
-  FisheryCatch[t,x,y]
+  # True catches at age is sampled -- arrays- indices you want to keep?
+  SCATByFleet <- apply(CatchAtWeight[,,,],1:3,sum,na.rm=TRUE)  #sums over fisher
+  SCTByFleet <- apply(SCATByFleet[,,],1:2,sum,na.rm=TRUE)  #sums over ages
+  SCTByFleetNew <- replace(SCTByFleet[,],which(SCTByFleet[,]==0),NA)
+  
+  #Calculate Historical observation error in catch: If not reporting error, sigHistCatch = 0
+  #obsError <- rnorm(n=length(histStartYr:Yr),mean = -(sigHistCatch)^2/2,sd = sigHistCatch) ##### Error in reported catches is based on Bousquet et al. 2009
+  obsError <- rnorm(n=1, mean = 0,sd = sigHistCatch)
+  obsevervedCatches <- obsError + SCTByFleetNew
+  FisheryCatch <- obsevervedCatches 
   
   ## effort data collected from each patch?
-  Eff_Temp <-Effort[Yr,,,fl]*collEffortFD ## should end up with effort in eahc patch, with 0s where there is no data
+  Eff_Temp <-SpaceEffort[Yr,,,fl]*collEffortFD ## should end up with effort in eahc patch, with 0s where there is no data
   Effort_FD <- replace(Eff_Temp, Eff_Temp == 0, NA)  #avoiding divide by zero problem in unsampled patches
-  CPUE_FD <- FisheryCatch/Effort_FD   ##Collect CPUE if effort is collected in patch. 
   if (Aggregate == FALSE){
-    Final <- CPUE_FD
+    Final <- FisheryCatch/Effort_FD
   } else {
     Final <- sum(FisheryCatch,na.rm=TRUE)/sum(Effort_FD,na.rm=TRUE)
   }
