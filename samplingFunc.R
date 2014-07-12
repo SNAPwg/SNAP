@@ -36,7 +36,7 @@ CollectData = function(timeStep, simTime, burn, FleetN, Aggregate, SampStartYr, 
     #### Collect FD data from these patches
     FDCatch <- CollectFisheryCatch(Yr = timeStep,SpaceCatAgeByFisher,Aggregate,fl,wgtAtAge,sigHistCatch,collCatchFD)
     FDCPUE <- CollectFisheryCPUE(Yr,SpaceCatAgeByFisher,SpaceEffort, fl, collEffortFD,Aggregate,wgtAtAge, sigHistCatch)
-    AgeFDMat <- CollectFisheryAges(Yr,FFleet,nAgeFD,collAgeFD,fishPop,FDsurvPatch)
+    AgeFDMat <- CollectFisheryAges(Yr,SpaceCatAgeByFisher,nAgeFD,collAgeFD, fl)
     SizeFDMat <- CollectFisherySizes(Yr,FFleet,nSizeFD,collSizeFD,FDsurvPatch,fishPop,minLen,maxLen,LengthBins,Sel50,Sel95)
   }
  
@@ -229,13 +229,28 @@ CollectFisheryCPUE <- function(Yr,SpaceCatAgeByFisher,SpaceEffort, fl, collEffor
 }
 
 #Collect Age Data
-CollectFisheryAges <- function(Yr,FFleet,nAgeFD,collAgeFD,fishPop,FDsurvPatch){
-  CatchatAge_FD <-  as.matrix(round(FFleet$CatchatAge[Yr,,]))  #turns the catch at age into whole numbers
-  AgeDatHolder <- matrix(NA,nrow=max(nAgeFD,1),ncol=length(collAgeFD))
-  for(patch in 1:length(collAgeFD)){
-    if ((FDsurvPatch * collAgeFD)[patch] == 1){ 
-      AgeDatHolder[,patch]<-sample(1:fishPop$fish$maxAge,nAgeFD,replace=TRUE,prob=(CatchatAge_FD[,patch]/sum(CatchatAge_FD[,patch])))
+CollectFisheryAges <- function(Yr,SpaceCatAgeByFisher,nAgeFD,collAgeFD, fl){
+  #Sum over fishers for this fleet and this year
+  SCAT <- apply(SpaceCatAgeByFisher[Yr,,,,,fl],1:3,sum,na.rm=TRUE)  #sums over fisher
+  AgeDatHolder <- array(NA,dim=c(max(nAgeFD,1),dim(collAgeFD)[1],dim(collAgeFD)[2]))
+  
+  #Figure out if there was any catch in each patch
+  CatchPerPatch <- apply(SpaceCatAgeByFisher[Yr,,,,,fl],1:2,sum,na.rm=TRUE)  #sums over fisher
+  
+  #Loop through possible patches
+  for(rows in 1:dim(collAgeFD)[1]){
+    for(cols in 1:dim(collAgeFD)[1]){
+      if (collAgeFD[rows,cols] == 1 & CatchPerPatch[rows,cols] > 0){ 
+        AgeDatHolder[,rows,cols]<-sample(1:kmax,nAgeFD,replace=TRUE,prob=SCAT[rows,cols,])
+      }
     }
+  }
+  
+  # Aggregate if necessary
+  if (Aggregate == FALSE){
+    AgeDatHolderFINAL <- AgeDatHolder
+  } else {
+    AgeDatHolderFINAL <- as.vector(AgeDatHolder)
   }
   return(AgeDatHolder)
 }
