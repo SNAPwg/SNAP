@@ -1,24 +1,7 @@
-require(animation)
-require(caTools)
-source("lenwei.R")
-source("VisualizeMovement.R")
-source("movArray.R")
-source("InitialPop.R")
-source("Recruitment.R")
-source("samplingFunc.R")
-#rm(list=ls())
+#==this function runs the main population and economic dynamics for simulations given several inputs (usually in the form of csvs)
 
-Graphs<-F
-GraphsFish<-F
-PrintLifeHistory<-F
-
-Life<-read.csv("LifeHistory.csv")
-SimCTL<-read.csv("GrandSimCtl.csv")
-Fleets<-read.csv("Fleets2.csv")
-season<-read.csv("Season.csv",header=F)
-Samp <- read.csv("SamplingParams.csv")
-
-
+Master<-function(Life,SimCTL,Fleets,season,Samp,NoTakeZone,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
+{
 FleetN<-ncol(Fleets)-1
 
 #==life history ==============================
@@ -152,15 +135,6 @@ maxCapac	<-as.numeric(Fleets[grep('maxCapac',Fleets[,ncol(Fleets)]),seq(1,ncol(F
 
 #==dummy spatial matrix
 SpaceUse<-matrix(0,ncol=SpaceC,nrow=SpaceR)
-
-#==read csv that shows MPAs (0=open access, 1=TURF, 2=NTZ)
-#NoTakeZone<-read.csv("notakezone40.csv",header=F)
-#NoTakeZone<-read.csv("notakezone80.csv",header=F)
-NoTakeZone<-read.csv("notakezoneNULL.csv",header=F)
-
-#==read in csv that give habitat quality, determine movement by habitat quality
-habitat<-read.csv("habitatNULL.csv",header=F)
-#habitat<-read.csv("habitat.csv",header=F)
 
 if(PrintLifeHistory==T)
 {
@@ -474,23 +448,10 @@ if(timeStep%%12==NoEnforcSeas)
 
 } # end timestep
 
+list(CatchByFisher=CatchByFisher,CostByFisher=CostByFisher,ProfitByFisher=ProfitByFisher,CostOfManagement=CostOfManagement,SpawningBiomass=SpawningBiomass)
+}
 
 
-dim(CatchByFisher)
-totCatch<-apply(CatchByFisher,2,sum,na.rm=T)
-totCost<-apply(CostByFisher,2,sum,na.rm=T)
-totProfit<-apply(ProfitByFisher,2,sum,na.rm=T)
-
-par(mfrow=c(4,1),mar=c(.1,4,.1,.1))
-plot(totCatch,type="b",xaxt='n',las=2)
-plot(totCost,lty=2,type="b",xaxt='n',las=2)
-plot(totProfit,lty=2,type="b",xaxt='n',las=2)
-lines(CostOfManagement,lty=2,type="b",col=2)
-plot(SpawningBiomass[burn:simTime],type="b",xaxt='n',las=2,ylab="SpawningBio",ylim=c(0,max(SpawningBiomass[burn:simTime],na.rm=T)))
-
-#ani.options(interval=.15)	
-#ani.replay()
-#saveHTML(ani.replay(), img.name = "record_plot_oldf",outdir = getwd(),interval=0.05)
 
 
 
