@@ -10,9 +10,6 @@ CPUETrigger<- function(CPUEDat,TimeWindow,TimeWeight,CPUERef)
   
 
 
-  
-  
-  
   Output<- data.frame(yr,'DBSRA', lands.df$catch.mt,OFLStats$OFL, OFLStats$LowerQuantile, OFLStats$UpperQuantile, OFLStats$SD,'OFL',Flag)
   
   colnames(Output)<- c('Year','Method','SampleSize','Value','LowerCI','UpperCI','SD','Metric','Flag')
