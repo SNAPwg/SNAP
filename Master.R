@@ -120,20 +120,20 @@ DataParams$Sizes_FD   	 	<-Samp[grep('Sizes_FD',Samp[,ncol(Samp)]),seq(1,ncol(Sa
 DataParams$Sizes_FI 	<-Samp[grep('Sizes_FI',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]            	# Collect fishery independent size composition data? 1 = yes, 2 = no.
 DataParams$VBSurvey		    <-Samp[grep('VBSurvey',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]       	# Collect age and size data to estimate VB params? 1 = yes, 2 = no.
 
-sampleTimeSteps <- seq(DataParams$SampStartYr,simTime,by=DataParams$SampFreq)  #Time steps in which sampling occurs
+sampleTimeSteps <- seq(DataParams$SampStartYr,simTime-burn+1,by=DataParams$SampFreq)  #Time steps in which sampling occurs
 
 ## Set up data storage. Size is different when data is Aggregated.
 
 if(DataParams$Aggregate == 0){
-  FDCatchData <- array(dim=c(simTime, SpaceR, SpaceC, FleetN))
-  FDCPUEData <- array(dim=c(simTime, SpaceR, SpaceC, FleetN))
-  FDAgeData <- array(NA,dim=c(simTime, DataParams$nAgeFD,dim(NoTakeZone)[1], dim(NoTakeZone)[2], FleetN))
-  FDSizeData <- array(NA,dim=c(simTime, DataParams$nSizeFD,dim(NoTakeZone)[1], dim(NoTakeZone)[2], FleetN))
+  FDCatchData <- array(dim=c(simTime-burn+1, SpaceR, SpaceC, FleetN))
+  FDCPUEData <- array(dim=c(simTime-burn+1, SpaceR, SpaceC, FleetN))
+  FDAgeData <- array(NA,dim=c(simTime-burn+1, DataParams$nAgeFD,SpaceR, SpaceC, FleetN))
+  FDSizeData <- array(NA,dim=c(simTime-burn+1, DataParams$nSizeFD,SpaceR, SpaceC, FleetN))
 } else {
-  FDCatchData <- array(dim=c(simTime, FleetN))
-  FDCPUEData <- array(dim=c(simTime, FleetN))
-  FDAgeData <- array(NA,dim=c(simTime, DataParams$nAgeFD*dim(NoTakeZone)[1]*dim(NoTakeZone)[2], FleetN))
-  FDSizeData <- array(NA,dim=c(simTime, DataParams$nSizeFD*dim(NoTakeZone)[1]*dim(NoTakeZone)[2], FleetN))
+  FDCatchData <- array(dim=c(simTime-burn+1, FleetN))
+  FDCPUEData <- array(dim=c(simTime-burn+1, FleetN))
+  FDAgeData <- array(NA,dim=c(simTime-burn+1, DataParams$nAgeFD*SpaceR*SpaceC, FleetN))
+  FDSizeData <- array(NA,dim=c(simTime-burn+1, DataParams$nSizeFD*SpaceR*SpaceC, FleetN))
 }
 
 #==matrix for defining seasons when multiple fleets
@@ -339,31 +339,31 @@ for(timeStep in burn:simTime)
    }	#end fishers
   
   # Sample at the end of fishing if timeStep equals a sampling time step.
-  if(timeStep %in% sampleTimeSteps){
-    Data <- CollectData(timeStep, simTime, FleetN, DataParams, NoTakeZone, SpaceNumAtAgeT,
+  if(timeStep %in% (sampleTimeSteps+burn)){
+    Data <- CollectData(timeStep, simTime, burn, FleetN, DataParams, NoTakeZone, SpaceNumAtAgeT,
                         SpaceCatAgeByFisher, SpaceEffort, wgtAtAge, lenAtAge, lenSD, PortX, PortY,kmax)
     
     # Assign data to storage
     if(DataParams$Aggregate == 0){
-      if(timeStep == SampStartYr){
-        FDCatchData[DataParams$histStartYr:timeStep,,,] <- Data$histCatchDat
-        FDCPUEData[DataParams$histStartYr:timeStep,,,] <- Data$histCPUEDat
+      if(timeStep == DataParams$SampStartYr+burn){
+        FDCatchData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCatchDat
+        FDCPUEData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCPUEDat
         } else {
-        FDCatchData[timeStep,,,] <- Data$FDCatch
-        FDCPUEData[timeStep,,,] <- Data$FDCPUE
+        FDCatchData[(timeStep-burn),,,] <- Data$FDCatch
+        FDCPUEData[(timeStep-burn),,,] <- Data$FDCPUE
         }
-      FDAgeData[timeStep,,,,] <- Data$AgeFD
-      FDSizeData[timeStep,,,,] <- Data$SizeFD
+      FDAgeData[(timeStep-burn),,,,] <- Data$AgeFD
+      FDSizeData[(timeStep-burn),,,,] <- Data$SizeFD
     } else {
-      if(timeStep == SampStartYr){
-        FDCatchData[DataParams$histStartYr:timeStep,] <- Data$histCatchDat
-        FDCPUEData[DataParams$histStartYr:timeStep,] <- Data$histCPUEDat
+      if(timeStep == DataParams$SampStartYr+burn){
+        FDCatchData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCatchDat
+        FDCPUEData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCPUEDat
       } else {
-        FDCatchData[timeStep,] <- Data$FDCatch
-        FDCPUEData[timeStep,] <- Data$FDCPUE
+        FDCatchData[(timeStep-burn),] <- Data$FDCatch
+        FDCPUEData[(timeStep-burn),] <- Data$FDCPUE
       }
-      FDAgeData[timeStep,,] <- Data$AgeFD
-      FDSizeData[timeStep,,] <- Data$SizeFD
+      FDAgeData[(timeStep-burn),,] <- Data$AgeFD
+      FDSizeData[(timeStep-burn),,] <- Data$SizeFD
     }
     
     }# if sample time steps
