@@ -1,5 +1,6 @@
 InitialPop<-function(R0,M,kmax,SpaceR,SpaceC,MoveProb,coords,Movement,Graphs=T,burn)
 {
+SpaceNumAtAgeT<-array(dim=c(burn,SpaceR,SpaceC,kmax))
 #==set up initial population============
 SpaceNumAtAgeT[1,,,1]<-R0/(SpaceR*SpaceC)
 for(h in 2:kmax)

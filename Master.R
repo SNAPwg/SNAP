@@ -231,9 +231,9 @@ for(timeStep in burn:simTime)
   if(timeStep==burn)OrigMaxNetBen<-max(NetBenefitPatch)
   tempSNALT<-SpaceNumAtAgeT[timeStep,,,]
 
-#==all fishers select their patch and fish
+#==all fishers select their patch and fish if the season is 'in'
 
- if(!is.na(any(timeStep%%12==which(!is.na(season[,flt+1])))))
+ if(any(timeStep%%12==(which(!is.na(season[,flt+1]))-1)))
  {
   for(f in 1:Fishers[flt])
   {     
@@ -306,34 +306,34 @@ for(timeStep in burn:simTime)
    }	#end fishers
   
   # Sample at the end of fishing if timeStep equals a sampling time step.
-  if(timeStep %in% (sampleTimeSteps+burn)){
-    Data <- CollectData(timeStep, simTime, burn, FleetN, DataParams, NoTakeZone, SpaceNumAtAgeT,
-                        SpaceCatAgeByFisher, SpaceEffort, wgtAtAge, lenAtAge, lenSD, PortX, PortY,kmax)
-    
-    # Assign data to storage
-    if(DataParams$Aggregate == 0){
-      if(timeStep == DataParams$SampStartYr+burn){
-        FDCatchData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCatchDat
-        FDCPUEData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCPUEDat
-        } else {
-        FDCatchData[(timeStep-burn),,,] <- Data$FDCatch
-        FDCPUEData[(timeStep-burn),,,] <- Data$FDCPUE
-        }
-      FDAgeData[(timeStep-burn),,,,] <- Data$AgeFD
-      FDSizeData[(timeStep-burn),,,,] <- Data$SizeFD
-    } else {
-      if(timeStep == DataParams$SampStartYr+burn){
-        FDCatchData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCatchDat
-        FDCPUEData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCPUEDat
-      } else {
-        FDCatchData[(timeStep-burn),] <- Data$FDCatch
-        FDCPUEData[(timeStep-burn),] <- Data$FDCPUE
-      }
-      FDAgeData[(timeStep-burn),,] <- Data$AgeFD
-      FDSizeData[(timeStep-burn),,] <- Data$SizeFD
-    }
-    
-    }# if sample time steps
+#   if(timeStep %in% (sampleTimeSteps+burn)){
+#     Data <- CollectData(timeStep, simTime, burn, FleetN, DataParams, NoTakeZone, SpaceNumAtAgeT,
+#                         SpaceCatAgeByFisher, SpaceEffort, wgtAtAge, lenAtAge, lenSD, PortX, PortY,kmax)
+#     
+#     # Assign data to storage
+#     if(DataParams$Aggregate == 0){
+#       if(timeStep == DataParams$SampStartYr+burn){
+#         FDCatchData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCatchDat
+#         FDCPUEData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCPUEDat
+#         } else {
+#         FDCatchData[(timeStep-burn),,,] <- Data$FDCatch
+#         FDCPUEData[(timeStep-burn),,,] <- Data$FDCPUE
+#         }
+#       FDAgeData[(timeStep-burn),,,,] <- Data$AgeFD
+#       FDSizeData[(timeStep-burn),,,,] <- Data$SizeFD
+#     } else {
+#       if(timeStep == DataParams$SampStartYr+burn){
+#         FDCatchData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCatchDat
+#         FDCPUEData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCPUEDat
+#       } else {
+#         FDCatchData[(timeStep-burn),] <- Data$FDCatch
+#         FDCPUEData[(timeStep-burn),] <- Data$FDCPUE
+#       }
+#       FDAgeData[(timeStep-burn),,] <- Data$AgeFD
+#       FDSizeData[(timeStep-burn),,] <- Data$SizeFD
+#     }
+# 
+#     }# if sample time steps
   } #end if for season
  } #end fleet 
 
@@ -408,23 +408,28 @@ filled.contour(tempSNALT[,,2],main="postfishery, postmovement: age 2",zlim=c(0,9
 #===========================================================================
 
 #==costs of management
+
 if(sum(1-NoTakeZone)>1 & timeStep==burn)
   CostOfManagement[timeStep]<- CostOfManagement[timeStep] + MPAsunk
 
 if(!is.na(SizeLimit[flt])& timeStep==burn)
   CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeSunk
 
-if(max(seasonN) < yearMark & timeStep==burn) 
+#==if there are any months in which fishing is not allowed, add sunk costs
+FleetSeason<-season[,2]
+FleetSeason[is.na(FleetSeason)]<-0
+if(FleetN>1)
+ FleetSeason<-apply(!is.na(season[,2:ncol(season)]),1,sum)
+if(any(FleetSeason<FleetN,na.rm=T) & timeStep==burn) 
   CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SeasonSunk 
 
 CostOfManagement[timeStep]<- CostOfManagement[timeStep] + sum(1-NoTakeZone)*MPAcost
 CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeCost
 
 #==if all fisheries are open, there is no cost of enforcing a season
-FleetSeason<-apply(!is.na(season[,2:ncol(season)]),1,sum)
-NoEnforcSeas<-which(FleetSeason==FleetN)
-if(timeStep%%12==NoEnforcSeas)
+if(FleetSeason[timeStep%%12+1]<FleetN)
  CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SeasonCost
+
 
 #==INSERT SAMPLING FUNCTION
  #==pass catch at age in year by patch (fish dependent)
@@ -452,6 +457,23 @@ list(CatchByFisher=CatchByFisher,CostByFisher=CostByFisher,ProfitByFisher=Profit
 }
 
 
-
+# outs<-Master(Life,SimCTL,Fleets,season,Samp,NoTakeZone,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
+# 
+# totCatch<-apply(CatchByFisher,2,sum,na.rm=T)
+# totCost<-apply(CostByFisher,2,sum,na.rm=T)
+# totProfit<-apply(ProfitByFisher,2,sum,na.rm=T)
+# 
+# par(mfrow=c(4,1),mar=c(.1,4,.1,.1))
+# plot(totCatch,type="b",xaxt='n',las=2)
+# plot(totCost,lty=2,type="b",xaxt='n',las=2)
+# plot(totProfit,lty=2,type="b",xaxt='n',las=2)
+# lines(CostOfManagement,lty=2,type="b",col=2)
+# plot(SpawningBiomass[burn:simTime],type="b",xaxt='n',las=2,ylab="SpawningBio",ylim=c(0,max(SpawningBiomass[burn:simTime],na.rm=T)))
+# 
+# dim(CatchByFisher)
+# dim(CostByFisher)
+# dim(ProfitByFisher)
+# length(CostOfManagement)
+# length(SpawningBiomass)
 
 

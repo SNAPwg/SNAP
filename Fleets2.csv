@@ -4,7 +4,6 @@
 1,1,# q = fishery catchability
 1,1,# PortX = location of the port of entry (x_y)
 1,1,# PortY = location of the port of entry (x_y)
-
 2,4,# price (ex-vessel price per unit havest (kg)
 3,5,# costTrv ==cost to travel one patch
 20,50,# costFish = cost per unit effort fishing

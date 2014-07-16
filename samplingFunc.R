@@ -281,7 +281,7 @@ CollectFisheryAges <- function(time,SpaceCatAgeByFisher,nAgeFD,collAgeFD, kmax, 
 }
 
 #Collect FD Size Data 
-CollectFisherySizes <- function(time,SpaceCatAgeByFisher,nSizeFD,collSizeFD,lenSD,lenAtAge,Aggregate,fl){
+CollectFisherySizes <- function(time,SpaceCatAgeByFisher,nSizeFD,collSizeFD,lenSD,lenAtAge,Aggregate,fl,kmax){
   ## Collect Ages using the same procedure as above
   #Sum over fishers for this fleet and this year
   SCAT <- apply(SpaceCatAgeByFisher[time,,,,,fl],1:3,sum,na.rm=TRUE)  #sums over fisher
