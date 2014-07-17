@@ -305,35 +305,35 @@ for(timeStep in burn:simTime)
     }
    }	#end fishers
   
-  # Sample at the end of fishing if timeStep equals a sampling time step.
-#   if(timeStep %in% (sampleTimeSteps+burn)){
-#     Data <- CollectData(timeStep, simTime, burn, FleetN, DataParams, NoTakeZone, SpaceNumAtAgeT,
-#                         SpaceCatAgeByFisher, SpaceEffort, wgtAtAge, lenAtAge, lenSD, PortX, PortY,kmax)
-#     
-#     # Assign data to storage
-#     if(DataParams$Aggregate == 0){
-#       if(timeStep == DataParams$SampStartYr+burn){
-#         FDCatchData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCatchDat
-#         FDCPUEData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCPUEDat
-#         } else {
-#         FDCatchData[(timeStep-burn),,,] <- Data$FDCatch
-#         FDCPUEData[(timeStep-burn),,,] <- Data$FDCPUE
-#         }
-#       FDAgeData[(timeStep-burn),,,,] <- Data$AgeFD
-#       FDSizeData[(timeStep-burn),,,,] <- Data$SizeFD
-#     } else {
-#       if(timeStep == DataParams$SampStartYr+burn){
-#         FDCatchData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCatchDat
-#         FDCPUEData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCPUEDat
-#       } else {
-#         FDCatchData[(timeStep-burn),] <- Data$FDCatch
-#         FDCPUEData[(timeStep-burn),] <- Data$FDCPUE
-#       }
-#       FDAgeData[(timeStep-burn),,] <- Data$AgeFD
-#       FDSizeData[(timeStep-burn),,] <- Data$SizeFD
-#     }
-# 
-#     }# if sample time steps
+  #Sample at the end of fishing if timeStep equals a sampling time step.
+  if(timeStep %in% (sampleTimeSteps+burn)){
+    Data <- CollectData(timeStep, simTime, burn, FleetN, DataParams, NoTakeZone, SpaceNumAtAgeT,
+                        SpaceCatAgeByFisher, SpaceEffort, wgtAtAge, lenAtAge, lenSD, PortX, PortY,kmax)
+    
+    # Assign data to storage
+    if(DataParams$Aggregate == 0){
+      if(timeStep == DataParams$SampStartYr+burn){
+        FDCatchData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCatchDat
+        FDCPUEData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCPUEDat
+        } else {
+        FDCatchData[(timeStep-burn),,,] <- Data$FDCatch
+        FDCPUEData[(timeStep-burn),,,] <- Data$FDCPUE
+        }
+      FDAgeData[(timeStep-burn),,,,] <- Data$AgeFD
+      FDSizeData[(timeStep-burn),,,,] <- Data$SizeFD
+    } else {
+      if(timeStep == DataParams$SampStartYr+burn){
+        FDCatchData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCatchDat
+        FDCPUEData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCPUEDat
+      } else {
+        FDCatchData[(timeStep-burn),] <- Data$FDCatch
+        FDCPUEData[(timeStep-burn),] <- Data$FDCPUE
+      }
+      FDAgeData[(timeStep-burn),,] <- Data$AgeFD
+      FDSizeData[(timeStep-burn),,] <- Data$SizeFD
+    }
+
+    }# if sample time steps
   } #end if for season
  } #end fleet 
 

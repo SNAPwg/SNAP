@@ -7,6 +7,7 @@
 
 CollectData = function(timeStep, simTime, burn, FleetN, DataParams, NoTakeZone, SpaceNumAtAgeT,
                        SpaceCatAgeByFisher, SpaceEffort, wgtAtAge, lenAtAge,lenSD, PortX, PortY,kmax){
+
   #Create Storage Structures Based on Number of Fleets and Aggregation
   if(DataParams$Aggregate == 0){
     histCatchDatOUTPUT <-  array(NA,dim=c(length((DataParams$histStartYr):(timeStep-burn)), dim(NoTakeZone)[1], dim(NoTakeZone)[2],FleetN))
@@ -62,8 +63,8 @@ CollectData = function(timeStep, simTime, burn, FleetN, DataParams, NoTakeZone, 
     FDCatch <- CollectFisheryCatch((timeStep-burn+1),SpaceCatAgeByFisher,DataParams$Aggregate,fl,wgtAtAge,DataParams$sigHistCatch,collCatchFD)
     FDCPUE <- CollectFisheryCPUE((timeStep-burn+1),SpaceCatAgeByFisher,SpaceEffort,fl,collEffortFD,DataParams$Aggregate,wgtAtAge,DataParams$sigHistCatch)
     AgeFDMat <- CollectFisheryAges((timeStep-burn+1),SpaceCatAgeByFisher,DataParams$nAgeFD,collAgeFD,kmax,fl,DataParams$Aggregate)
-    SizeFDMat <- CollectFisherySizes((timeStep-burn+1),SpaceCatAgeByFisher,DataParams$nSizeFD,collSizeFD,lenSD,lenAtAge,DataParams$Aggregate,fl)
-    
+    SizeFDMat <- CollectFisherySizes((timeStep-burn+1),SpaceCatAgeByFisher,DataParams$nSizeFD,collSizeFD,lenSD,lenAtAge,DataParams$Aggregate,fl,kmax)
+                                                            
     #### Assign to Ouput Arrays
     if(DataParams$Aggregate == 0){
       histCatchDatOUTPUT[,,,fl] <- histCatchDat
