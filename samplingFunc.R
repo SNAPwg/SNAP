@@ -82,39 +82,40 @@ CollectData = function(ttStep, simTime, burn, FleetN, DataParams, NoTakeZone, Sp
     }
   } # for FleetN
   
-#   # Figure out where FI sampling should occur
-#   if(DataParams$FISurvType == 0){FISurvMat <- read.csv("FISurvMat.csv") }
-#   if(DataParams$FISurvType == 1){FISurvMat <- matrix(1,nrow=dim(NoTakeZone)[1],ncol=dim(NoTakeZone)[2]) }
-#   if(DataParams$FISurvType == 2){FISurvMat <- matrix(0,nrow=dim(NoTakeZone)[1],ncol=dim(NoTakeZone)[2]) }
-#   if(DataParams$FISurvType == 3){ 
-#     TotPatches <- dim(NoTakeZone)[1]*dim(NoTakeZone)[2]
-#     numberSampled <- round(TotPatches*0.2)
-#     randPatchNums <- sample(1:TotPatches, numberSampled, replace=FALSE)
-#     FISurvMat <- matrix(0,nrow=dim(NoTakeZone)[1],ncol=dim(NoTakeZone)[2])
-#     FISurvMat <- replace(FISurvMat, randPatchNums, 1)
-#   }
-#   if(DataParams$FISurvType == 4){
-#     # Sample 10% of patches close to port, 10% of patches far from port
-#     TotPatches <- dim(NoTakeZone)[1]*dim(NoTakeZone)[2]
-#     numberSampled <- round(TotPatches*0.1)
-#     #Calculate distance from port
-#     Distance<-sqrt((row(SpaceUse)-PortX[fl])^2 + (col(SpaceUse)-PortY[fl])^2)
-#     nearSites <- order(Distance)[1:numberSampled]
-#     farSites <- order(Distance)[(TotPatches-numberSampled):TotPatches]
-#     FISurvMat <- matrix(0,nrow=dim(NoTakeZone)[1],ncol=dim(NoTakeZone)[2]) 
-#     FISurvMat <- replace(FISurvMat, c(nearSites,farSites), 1)
-#   }
-#   if(DataParams$FISurvType == 5){FISurvMat <- ((NoTakeZone - 1) * -1)} 
-#   
-#   collCatchFI <- FISurvMat * DataParams$Catch_FI
-#   collEffortFI <- FISurvMat * DataParams$Effort_FI
-#   collAgeFI <- FISurvMat * DataParams$Ages_FI
-#   collSizeFI <- FISurvMat * DataParams$Sizes_FI
-# 
-#   ####Survey population
-#   SurveyCatchAtAge <- GoSurvey(tt, SpaceNumAtAgeT, DataParams, FISurvMat, kmax)
-#   
-#   ### Collect FI Data
+  # Figure out where FI sampling should occur
+  if(DataParams$FISurvType == 0){FISurvMat <- read.csv("FISurvMat.csv") }
+  if(DataParams$FISurvType == 1){FISurvMat <- matrix(1,nrow=dim(NoTakeZone)[1],ncol=dim(NoTakeZone)[2]) }
+  if(DataParams$FISurvType == 2){FISurvMat <- matrix(0,nrow=dim(NoTakeZone)[1],ncol=dim(NoTakeZone)[2]) }
+  if(DataParams$FISurvType == 3){ 
+    TotPatches <- dim(NoTakeZone)[1]*dim(NoTakeZone)[2]
+    numberSampled <- round(TotPatches*0.2)
+    randPatchNums <- sample(1:TotPatches, numberSampled, replace=FALSE)
+    FISurvMat <- matrix(0,nrow=dim(NoTakeZone)[1],ncol=dim(NoTakeZone)[2])
+    FISurvMat <- replace(FISurvMat, randPatchNums, 1)
+  }
+  if(DataParams$FISurvType == 4){
+    # Sample 10% of patches close to port, 10% of patches far from port
+    TotPatches <- dim(NoTakeZone)[1]*dim(NoTakeZone)[2]
+    numberSampled <- round(TotPatches*0.1)
+    #Calculate distance from port
+    Distance<-sqrt((row(SpaceUse)-PortX[fl])^2 + (col(SpaceUse)-PortY[fl])^2)
+    nearSites <- order(Distance)[1:numberSampled]
+    farSites <- order(Distance)[(TotPatches-numberSampled):TotPatches]
+    FISurvMat <- matrix(0,nrow=dim(NoTakeZone)[1],ncol=dim(NoTakeZone)[2]) 
+    FISurvMat <- replace(FISurvMat, c(nearSites,farSites), 1)
+  }
+  if(DataParams$FISurvType == 5){FISurvMat <- ((NoTakeZone - 1) * -1)} 
+  
+  collCatchFI <- FISurvMat * DataParams$Catch_FI
+  collEffortFI <- FISurvMat * DataParams$Effort_FI
+  collAgeFI <- FISurvMat * DataParams$Ages_FI
+  collSizeFI <- FISurvMat * DataParams$Sizes_FI
+
+  ####Survey population
+  SurveyCatchAtAge <- GoSurvey(timeStep, SpaceNumAtAgeT, DataParams, FISurvMat, kmax)
+  
+  ### Collect FI Data
+  CatchFI <- CollectCatchFI(timeStep,SurveyCatchAtAge,collCatchFI,DataParams$sigSurvey,wgtAtAge,DataParams$Aggregate)
   
   
   ####Return list of collected data
@@ -365,56 +366,63 @@ CollectFisherySizes <- function(tt,SpaceCatAgeByFisher,nSizeFD,collSizeFD,lenSD,
 ##############################################################################
 
 #Determine Catch at age from FI survey
-# GoSurvey = function(tt, SpaceNumAtAgeT, DataParams, FISurvMat, kmax){
-#   #Calculate survey selectivity at age
-#   selFI<-DataParams$Survey_q/(1+exp(-log(19)*((seq(1,kmax)-DataParams$Sel50FI)/(DataParams$Sel95FI-DataParams$Sel50FI))))
-#   HarvVec <- (1-exp(-DataParams$SurveyF))*selFI
-#   SurveyArray <- array(FISurvMat,dim=c(dim(FISurvMat)[1],dim(FISurvMat)[2],length(selFI)))
-#   HarvArray <- sweep(SurveyArray,3, FUN = "*",HarvVec)
-#   CatchatAge_FI <- pmin(SpaceNumAtAgeT[tt,,,], SpaceNumAtAgeT[tt,,,]*HarvArray)
-#   
-#   return(CatchatAge_FI)
-# }
-# 
-# CollectCatchFI <- function(tt,SurveyCatchAtAge,collCatchFI,sigSurvey,wgtAtAge,Aggregate){
-#   CatchAtWeight<-sweep(SurveyCatchAtAge,MARGIN=3,wgtAtAge,`*`) #calc catch at weight
-#   SurvCatchPerPatch <- apply(CatchAtWeight[,,],1:2,sum,na.rm=TRUE)  #sums over ages
-#   SurvCatchPerPatchNew <- replace(SurvCatchPerPatch,which(SurvCatchPerPatch==0),NA)
-#   
-#   #Calculate  observation error in catch: If not reporting error, sigHistCatch = 0
-#   obsError <- rnorm(n=1, mean = 0,sd = sigSurvey)
-#   observedCatches <- obsError + SurvCatchPerPatchNew
-#   SurveyCatch <- observedCatches * collCatchFI
-# 
-#   if (Aggregate == 0){
-#     Final <-  SurveyCatch
-#   } else {
-#     Final <- sum( SurveyCatch,na.rm=TRUE)
-#   }
-#   return(Final)
-# }
+GoSurvey = function(tt, SpaceNumAtAgeT, DataParams, FISurvMat, kmax){
+  #Calculate survey selectivity at age
+  selFI<-DataParams$Survey_q/(1+exp(-log(19)*((seq(1,kmax)-DataParams$Sel50FI)/(DataParams$Sel95FI-DataParams$Sel50FI))))
+  HarvVec <- (1-exp(-DataParams$SurveyF))*selFI
+  SurveyArray <- array(FISurvMat,dim=c(dim(FISurvMat)[1],dim(FISurvMat)[2],length(selFI)))
+  HarvArray <- sweep(SurveyArray,3, FUN = "*",HarvVec)
+  CatchatAge_FI <- pmin(SpaceNumAtAgeT[tt,,,], SpaceNumAtAgeT[tt,,,]*HarvArray)
+  
+  return(CatchatAge_FI)
+}
 
-# #Determine survey CPUE
-# CollectSurvCPUE <- function(CatchatSizeFI,survEffort,SurvPatch,collCatchFI,FFleet,Aggregate,minLen, maxLen, LengthBins){
-#   LengthVec = seq(minLen, maxLen, by= LengthBins)   #changed to make 1cm length bins
-#   LenMids = seq(LengthVec[1] +((LengthVec[2]-LengthVec[1])/2), by=(LengthVec[2]-LengthVec[1]), length=length(LengthVec)-1)
-#   WeightAtLength = FFleet$fishPop$fish$wa*LenMids^FFleet$fishPop$fish$wb
-#   #SurvEffTemp <- replace(((survEffort/length(SurvPatch))*SurvPatch), survEffort*SurvPatch == 0, NA) #avoiding dividing by zero
-#   SurvEffTemp <- replace(((survEffort/sum(SurvPatch))*SurvPatch), survEffort*SurvPatch == 0, NA) 
-#   if (length(collCatchFI) >1){
-#     SurvCatch <- colSums(as.matrix(CatchatSizeFI[1:(length(LengthVec)-1),]*WeightAtLength))
-#   }else{
-#     SurvCatch <- sum(CatchatSizeFI[1:(length(LengthVec)-1)]*WeightAtLength) 
-#   }
-#   CPUE_FI <- SurvCatch/SurvEffTemp
-#   if (Aggregate == FALSE){
-#     Final <- CPUE_FI
-#   } else {
-#     Final <- sum(SurvCatch,na.rm=TRUE)/sum(SurvEffTemp,na.rm=TRUE)
-#   }
-#   return(Final)
-# } 
-# 
+CollectCatchFI <- function(tt,SurveyCatchAtAge,collCatchFI,sigSurvey,wgtAtAge,Aggregate){
+  CatchAtWeight<-sweep(SurveyCatchAtAge,MARGIN=3,wgtAtAge,`*`) #calc catch at weight
+  SurvCatchPerPatch <- apply(CatchAtWeight[,,],1:2,sum,na.rm=TRUE)  #sums over ages
+  SurvCatchPerPatchNew <- replace(SurvCatchPerPatch,which(SurvCatchPerPatch==0),NA)
+  
+  #Calculate  observation error in catch: If not reporting error, sigHistCatch = 0
+  obsError <- rnorm(n=1, mean = 0,sd = sigSurvey)
+  observedCatches <- obsError + SurvCatchPerPatchNew
+  SurveyCatch <- observedCatches * collCatchFI
+
+  if (Aggregate == 0){
+    Final <-  SurveyCatch
+  } else {
+    Final <- sum( SurveyCatch,na.rm=TRUE)
+  }
+  return(Final)
+}
+
+#Determine survey CPUE
+CollectSurvCPUE <- function(SurveyCatchAtAge,SurveyF, Survey_q, SurveyCatchAtAge,collEffortFI,Aggregate,sigSurvey,wgtAtAge){
+  CatchAtWeight<-sweep(SurveyCatchAtAge,MARGIN=3,wgtAtAge,`*`) #calc catch at weight
+  SurvCatchPerPatch <- apply(CatchAtWeight[,,],1:2,sum,na.rm=TRUE)  #sums over ages
+  SurvCatchPerPatchNew <- replace(SurvCatchPerPatch,which(SurvCatchPerPatch==0),NA)
+  
+  #Calculate  observation error in catch: If not reporting error, sigHistCatch = 0
+  obsError <- rnorm(n=1, mean = 0,sd = sigSurvey)
+  observedCatches <- obsError + SurvCatchPerPatchNew
+  SurveyCatch <- observedCatches * collEffortFI
+  
+  #SurvEffTemp <- replace(((survEffort/length(SurvPatch))*SurvPatch), survEffort*SurvPatch == 0, NA) #avoiding dividing by zero
+  SurvEffTemp <- replace(((survEffort/sum(SurvPatch))*SurvPatch), survEffort*SurvPatch == 0, NA) 
+  
+  if (length(collCatchFI) >1){
+    SurvCatch <- colSums(as.matrix(CatchatSizeFI[1:(length(LengthVec)-1),]*WeightAtLength))
+  }else{
+    SurvCatch <- sum(CatchatSizeFI[1:(length(LengthVec)-1)]*WeightAtLength) 
+  }
+  CPUE_FI <- SurvCatch/SurvEffTemp
+  if (Aggregate == FALSE){
+    Final <- CPUE_FI
+  } else {
+    Final <- sum(SurvCatch,na.rm=TRUE)/sum(SurvEffTemp,na.rm=TRUE)
+  }
+  return(Final)
+} 
+
 # #collect CPUE in numbers by size -- needed in dtree
 # CollectSurvnum <- function(CatchatSizeFI,survEffort,SurvPatch,collCatchFI,FFleet,Aggregate){
 #   SurvEffTemp <- replace(((survEffort/sum(SurvPatch))*SurvPatch), survEffort*SurvPatch == 0, NA) #avoiding dividing by zero, and effort is only allocated to patches that are surveyed
