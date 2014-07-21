@@ -5,7 +5,8 @@ SimCTL<-read.csv("GrandSimCtl.csv",header=F)               # simulation controls
 Fleets<-read.csv("Fleets.csv",header=F)                   # fleet characteristics  
 season<-read.csv("seasonNULL.csv",header=F)           # fishing seasons by fleet
 Samp <- read.csv("SamplingParams.csv")            # sampling controls for management
-NoTakeZone<-read.csv("notakezoneNULL.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
+NoTakeZone<-read.csv("notakezoneNULL.csv",header=F)   # marine protected areas (0=MPA, 1=open access, 2=TURF?) (make sure that there is no MPA for MSY calcs)
+NoTakeZoneNULL<-read.csv("notakezoneNULL.csv",header=F)   # marine protected areas 
 habitat<-read.csv("habitatNULL.csv",header=F)         # habitat quality (recruitment suitability)
 
 #==set costs to zero

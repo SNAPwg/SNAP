@@ -5,10 +5,10 @@
 1,# PortX = location of the port of entry (x_y)
 1,# PortY = location of the port of entry (x_y)
 3,# season = number months in which fishing is allowed (no season == 12 )
-4,# price (ex-vessel price per unit havest (kg)
+8,# price (ex-vessel price per unit havest (kg)
 5,# costTrv ==cost to travel one patch
-50,# costFish = cost per unit effort fishing
+20,# costFish = cost per unit effort fishing
 0.05,# discRate = discount rate
 20,# TimeHor = time horizon for evaluation of policy
-10,# Fishers = number of fishers in the fishery
-50,# maxCapac = max capcity of a single fisherman in a time step (kg) (can also be used as a triplimit or permit regulation tool)
+13,# Fishers = number of fishers in the fishery
+10,# maxCapac = max capcity of a single fisherman in a time step (kg) (can also be used as a triplimit or permit regulation tool)

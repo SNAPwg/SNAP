@@ -17,7 +17,7 @@ source("samplingFunc.R")
 
 Graphs<-F
 GraphsFish<-F
-PrintLifeHistory<-T
+PrintLifeHistory<-F
 
 #==open access===========================
 
@@ -26,10 +26,11 @@ SimCTL<-read.csv("GrandSimCtl.csv",header=F)               # simulation controls
 Fleets<-read.csv("Fleets.csv",header=F)                   # fleet characteristics  
 season<-read.csv("seasonNULL.csv",header=F)           # fishing seasons by fleet
 Samp <- read.csv("SamplingParams.csv")            # sampling controls for management
-NoTakeZone<-read.csv("notakezoneNULL.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
+NoTakeZoneNULL<-read.csv("notakezoneNULL.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
+NoTakeZoneImp<-read.csv("notakezone.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
 habitat<-read.csv("habitatNULL.csv",header=F)         # habitat quality (recruitment suitability)
 
-OpenAccess<-Master(Life,SimCTL,Fleets,season,Samp,NoTakeZone,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
+OpenAccess<-Master(Life,SimCTL,Fleets,season,Samp,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
 OAtotCatch<-apply(OpenAccess$CatchByFisher,2,sum,na.rm=T)
 OAtotCost<-apply(OpenAccess$CostByFisher,2,sum,na.rm=T)
 OAtotProfit<-apply(OpenAccess$ProfitByFisher,2,sum,na.rm=T)
@@ -41,59 +42,85 @@ sum(tempMat)
 dev.off()
 filled.contour(tempMat)
 
-#==MPA====
-Life<-read.csv("LifeHistoryRARE.csv")                 # life history characteristics
-SimCTL<-read.csv("GrandSimCtl.csv",header=F)               # simulation controls
-Fleets<-read.csv("Fleets.csv",header=F)                   # fleet characteristics  
-season<-read.csv("seasonNULL.csv",header=F)           # fishing seasons by fleet
-Samp <- read.csv("SamplingParams.csv")            # sampling controls for management
-NoTakeZone<-read.csv("notakezone.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
-habitat<-read.csv("habitatNULL.csv",header=F)         # habitat quality (recruitment suitability)
-
-halfMPA<-Master(Life,SimCTL,Fleets,season,Samp,NoTakeZone,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
-MPAtotCatch<-apply(halfMPA$CatchByFisher,2,sum,na.rm=T)
-MPAtotCost<-apply(halfMPA$CostByFisher,2,sum,na.rm=T)
-MPAtotProfit<-apply(halfMPA$ProfitByFisher,2,sum,na.rm=T)
-
-tempMat<-matrix(0,ncol=10,nrow=10)
-for(x in 1:275)
-  tempMat<-tempMat+halfMPA$SpaceEffort[x,,,]
-
-
-filled.contour(tempMat)
-sum(tempMat)
-
-#==plot it all
-burnIn    <-SimCTL[grep('burn',SimCTL[,2]),1]
+burnInt   <-SimCTL[grep('burn',SimCTL[,2]),1]
 simTimePlt <-SimCTL[grep('simTime',SimCTL[,2]),1]
+initManage<-SimCTL[grep('initManage',SimCTL[,2]),1]   # year in which to initiate management
 
 par(mfrow=c(6,1),mar=c(.1,4,.1,.1))
-plot(OAtotCatch,type="b",xaxt='n',las=2,ylim=c(0,max(OAtotCatch,MPAtotCatch,na.rm=T)),ylab="Total Catch",pch=16)
- lines(MPAtotCatch,type="b",col=2,pch=16)
+plot(OAtotCatch,type="b",xaxt='n',las=2,ylim=c(0,max(OAtotCatch,na.rm=T)),ylab="Total Catch",pch=16)
+abline(v=initManage,col=2,lty=2)
+legend("topright",col=2,lty=2,"MPA implemented",bty='n')
+plot(OAtotCost,lty=2,type="b",pch=16,xaxt='n',las=2,ylim=c(0,max(OAtotCost,na.rm=T)),ylab="Total cost of fishing")
+abline(v=initManage,col=2,lty=2)
 
-plot(OAtotCost,lty=2,type="b",pch=16,xaxt='n',las=2,ylim=c(0,max(OAtotCost,MPAtotCost,na.rm=T)),ylab="Total cost of fishing")
-lines(MPAtotCost,type="b",col=2,pch=16)
+plot(OAtotProfit,lty=2,type="b",pch=16,xaxt='n',las=2,ylim=c(0,300),ylab="Total profit of fishing")
+abline(v=initManage,col=2,lty=2)
 
-# plot(OAtotProfit,lty=2,type="b",pch=16,xaxt='n',las=2,ylim=c(0,max(OAtotProfit,MPAtotProfit,na.rm=T)),ylab="Total profit of fishing")
-plot(OAtotProfit,lty=2,type="b",pch=16,xaxt='n',las=2,ylim=c(0,200),ylab="Total profit of fishing")
-lines(MPAtotProfit,type="b",col=2,pch=16)
-# lines(MPAtotProfit,type="b",col=2,pch=16)
-
-plot(OpenAccess$CostOfManagement,pch=16,type="b",xaxt='n',las=2,ylim=c(0,max(OpenAccess$CostOfManagement,halfMPA$CostOfManagement,na.rm=T)),
+plot(OpenAccess$CostOfManagement[1:(simTimePlt-burnInt)],pch=16,type="b",xaxt='n',las=2,ylim=c(0,max(OpenAccess$CostOfManagement,na.rm=T)),
      ylab="Cost of MPA")
-lines(halfMPA$CostOfManagement,pch=16,type="b",col=2)
+abline(v=initManage,col=2,lty=2)
 
-plot(OpenAccess$SpawningBiomass[burnIn:simTimePlt],pch=16,type="b",xaxt='n',las=2,
-#      ylab="SpawningBio",ylim=c(0,max(OpenAccess$SpawningBiomass[burnIn:simTimePlt],na.rm=T)))
-     ylab="SpawningBio",ylim=c(0,2100))
-lines(halfMPA$SpawningBiomass[burnIn:simTimePlt],pch=16,type="b",col=2)
+plot(OpenAccess$SpawningBiomass[burnInt:simTimePlt],pch=16,type="b",xaxt='n',las=2,
+     ylab="SpawningBio",ylim=c(0,max(OpenAccess$SpawningBiomass[burnInt:simTimePlt],na.rm=T)))
+abline(v=initManage,col=2,lty=2)
+plot(OpenAccess$OutsideMPAspbio[burnInt:simTimePlt],ylim=c(0,max(OpenAccess$OutsideMPAspbio[burnInt:simTimePlt])),type='b',pch=16)
+lines(OpenAccess$InsideMPAspbio[burnInt:simTimePlt],type='b',pch=16,col=2)
+abline(v=initManage,col=2,lty=2)
 
-plot(halfMPA$InsideMPAspbio[burnIn:simTimePlt])
-lines(halfMPA$OutsideMPAspbio[burnIn:simTimePlt])
-
-legend("topright",col=c(1,2),pch=16,legend=c("Open access","MPA"),bty='n')
+legend("topright",col=c(1,2),pch=16,legend=c("Outside MPA","Inside MPA"),bty='n')
 
 
+#== calculate statistics for before and after managmeent implementation
+timeBack<-120
+timeInd11<-initManage-timeBack-burnInt
+timeInd12<-initManage-burnInt
+
+timeInd21<-simTimePlt-burnInt-timeBack
+timeInd22<-simTimePlt-burnInt
+
+# timeInd21<-simTimePlt-burnInt-timeBack
+# timeInd22<-simTimePlt-burnInt
+sum(OAtotCatch[(timeInd11):(timeInd12)])
+sum(OAtotCatch[(timeInd21):(timeInd22)])
+
+sum(OAtotCost[(timeInd11):(timeInd12)])
+sum(OAtotCost[(timeInd21):(timeInd22)])
+
+sum(OAtotProfit[(timeInd11):(timeInd12)])
+sum(OAtotProfit[(timeInd21):(timeInd22)])
+
+sum(OpenAccess$SpawningBiomass[(timeInd11):(timeInd12)])
+sum(OpenAccess$SpawningBiomass[(timeInd21):(timeInd22)])
+
+sum(OpenAccess$OutsideMPAspbio[(timeInd11):(timeInd12)])
+sum(OpenAccess$OutsideMPAspbio[(timeInd21):(timeInd22)])
+
+sum(OpenAccess$InsideMPAspbio[(timeInd11):(timeInd12)])
+sum(OpenAccess$InsideMPAspbio[(timeInd21):(timeInd22)])
+
+Cat1<-mean(OAtotCatch[(timeInd11):(timeInd12)])
+Cat2<-mean(OAtotCatch[(timeInd21):(timeInd22)])
+(Cat2-Cat1)/Cat1
+
+Cost1<-mean(OAtotCost[(timeInd11):(timeInd12)])
+Cost2<-mean(OAtotCost[(timeInd21):(timeInd22)])
+(Cost2-Cost1)/Cost1
+
+Prof1<-mean(OAtotProfit[(timeInd11):(timeInd12)])
+Prof2<-mean(OAtotProfit[(timeInd21):(timeInd22)])
+(Prof2-Prof1)/Prof1
+
+SpB1<-mean(OpenAccess$SpawningBiomass[(timeInd11):(timeInd12)])
+SpB2<-mean(OpenAccess$SpawningBiomass[(timeInd21):(timeInd22)])
+(SpB2-SpB1)/SpB1
+
+MPAout1<-mean(OpenAccess$OutsideMPAspbio[(timeInd11):(timeInd12)])
+MPAout2<-mean(OpenAccess$OutsideMPAspbio[(timeInd21):(timeInd22)])
+(MPAout2-MPAout1)/MPAout1
+
+MPAin1<-mean(OpenAccess$InsideMPAspbio[(timeInd11):(timeInd12)])
+MPAin2<-mean(OpenAccess$InsideMPAspbio[(timeInd21):(timeInd22)])
+(MPAin2-MPAin1)/MPAin1
 
 DiffMPA<-cbind((OAtotCatch-MPAtotCatch)/OAtotCatch,(OAtotProfit-MPAtotProfit)/OAtotProfit,
  (OpenAccess$SpawningBiomass[burnIn:simTimePlt]-halfMPA$SpawningBiomass[burnIn:simTimePlt])/OpenAccess$SpawningBiomass[burnIn:simTimePlt]

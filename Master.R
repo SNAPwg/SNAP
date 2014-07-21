@@ -1,6 +1,6 @@
 #==this function runs the main population and economic dynamics for simulations given several inputs (usually in the form of csvs)
 
-Master<-function(Life,SimCTL,Fleets,season,Samp,NoTakeZone,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
+Master<-function(Life,SimCTL,Fleets,season,Samp,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
 {
 FleetN<-ncol(Fleets)-1
 
@@ -41,11 +41,13 @@ wgtAtAge<-rep(0,kmax)
   }
 
 #==cross simulation ctl=========================
-SpaceR	<-SimCTL[grep('SpaceR',SimCTL[,2]),1]	    	# Rows in the grid space
-SpaceC	<-SimCTL[grep('SpaceC',SimCTL[,2]),1]  			# cols in the grid spcae
-burn		<-SimCTL[grep('burn',SimCTL[,2]),1]    		  # burn in for movement equilibration (use option "Graphs" in "Initpop" to see that population is thoroughly mixed)
-simTime <-SimCTL[grep('simTime',SimCTL[,2]),1]     	# time steps for projection
-yearMark<-SimCTL[grep('yearMark',SimCTL[,2]),1]	  	# number of time steps in a year
+SpaceR	  <-SimCTL[grep('SpaceR',SimCTL[,2]),1]	    	# Rows in the grid space
+SpaceC	  <-SimCTL[grep('SpaceC',SimCTL[,2]),1]  			# cols in the grid spcae
+burn	  	<-SimCTL[grep('burn',SimCTL[,2]),1]    		  # burn in for movement equilibration (use option "Graphs" in "Initpop" to see that population is thoroughly mixed)
+simTime   <-SimCTL[grep('simTime',SimCTL[,2]),1]     	# time steps for projection
+yearMark  <-SimCTL[grep('yearMark',SimCTL[,2]),1]	  	# number of time steps in a year
+initManage<-SimCTL[grep('initManage',SimCTL[,2]),1]   # year in which to initiate management
+
 
 #==management costs==========================
 MPAsunk     <-SimCTL[grep('MPAsunk',SimCTL[,2]),1]  	# start up cost of enforcing an MPA
@@ -217,6 +219,9 @@ VirSpBio<-sum(tempSpBio)
 
 for(timeStep in burn:simTime) 
 { 
+  NoTakeZone<-NoTakeZoneNULL
+  if(timeStep>=initManage)
+    NoTakeZone<-NoTakeZoneImp
  for(flt in 1:FleetN)
  {
    #==fishers decide where to fish============
@@ -355,12 +360,12 @@ SpawningBiomass[timeStep]<-sum(tempSpBio)
 
 tempSpBio<-rep(0,kmax)
 for(i in 1:kmax)
- tempSpBio[i]<-sum(-1*(NoTakeZone-1)*tempSNALT[,,i]*MatAge[i])
+ tempSpBio[i]<-sum(-1*(NoTakeZoneImp-1)*tempSNALT[,,i]*MatAge[i])
 InsideMPAspbio[timeStep]<-sum(tempSpBio)
 
 tempSpBio<-rep(0,kmax)
 for(i in 1:kmax)
- tempSpBio[i]<-sum(NoTakeZone*tempSNALT[,,i]*MatAge[i])
+ tempSpBio[i]<-sum(NoTakeZoneImp*tempSNALT[,,i]*MatAge[i])
 OutsideMPAspbio[timeStep]<-sum(tempSpBio)
 
    if(timeStep%%yearMark == 0)
@@ -424,10 +429,10 @@ filled.contour(tempSNALT[,,2],main="postfishery, postmovement: age 2",zlim=c(0,9
 
 #==costs of management
 
-if(sum(1-NoTakeZone)>1 & timeStep==burn)
+if(sum(1-NoTakeZone)>1 & timeStep==initManage)
   CostOfManagement[timeStep]<- CostOfManagement[timeStep] + MPAsunk
 
-if(!is.na(SizeLimit[flt])& timeStep==burn)
+if((SizeLimit[flt]>0)& timeStep==initManage)
   CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeSunk
 
 #==if there are any months in which fishing is not allowed, add sunk costs
@@ -435,11 +440,13 @@ FleetSeason<-season[,2]
 FleetSeason[is.na(FleetSeason)]<-0
 if(FleetN>1)
  FleetSeason<-apply(!is.na(season[,2:ncol(season)]),1,sum)
-if(any(FleetSeason<FleetN,na.rm=T) & timeStep==burn) 
+if(any(FleetSeason<FleetN,na.rm=T) & timeStep==initManage) 
   CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SeasonSunk 
 
 CostOfManagement[timeStep]<- CostOfManagement[timeStep] + sum(1-NoTakeZone)*MPAcost
-CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeCost
+
+if((SizeLimit[flt])>0)
+ CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeCost
 
 #==if all fisheries are open, there is no cost of enforcing a season
 if(FleetSeason[timeStep%%12+1]<FleetN)
