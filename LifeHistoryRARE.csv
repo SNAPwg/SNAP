@@ -1,0 +1,23 @@
+#==life history ==============================,
+23,# kmax = max age
+2.63,# kmat = age at maturity
+1,# kmin = minimum size
+0.194,# M = natural mortality
+618,# Linf = VonBert Linf
+0.133,# K = VonBert K
+-3.132,# t0 VonBert t0
+6.14E-08,# wtA weight A
+2.779,# wtB weight B
+1.704,# mat50 = age at 50% maturitiy
+2,# mat95 = age at 95% maturity
+0.4, # lenSD = standard deviation around length at age
+,
+1,"# RecDist (how is recruitment distributed? 1= equally, 2= proportional to SpBio, 3= determined by habitat.csv)"
+0.5,# sdx = sd of movement on the x axis in units of rows/columns
+0.5,# sdy = sd of movenet on the y axis in units of rows/columsn
+0,# movP50 = probability of moving by age (logistic; 505; set both to 0 if all move)
+0,# movP95 = probability of moving by age (l95%_
+,
+1000,# R0 = virgin recruitment
+0.697,# steepness of the BH parameterization
+0.5,"# sigmaR = if detRec != 0, this is the sd of the lognormal error applied to recruitment"

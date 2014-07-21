@@ -36,7 +36,7 @@ lenAtAge<-rep(0,kmax)
 wgtAtAge<-rep(0,kmax)
  for(k in 1:kmax)
   {
-   lenAtAge[k]<-Linf*(1-exp(-K*k-t0))
+   lenAtAge[k]<-Linf*(1-exp(-K*(k-t0)))
    wgtAtAge[k]<-wtA*lenAtAge[k]^wtB
   }
 
@@ -179,6 +179,8 @@ ProfitByFisher<-array(dim=c(max(Fishers),(simTime-burn+1),FleetN))
 CostByFisher<-array(dim=c(max(Fishers),simTime-burn+1,FleetN))
 SpawningBiomass<-rep(0,simTime-burn)
 CostOfManagement<-rep(0,simTime-burn)
+InsideMPAspbio<-rep(0,simTime-burn)
+OutsideMPAspbio<-rep(0,simTime-burn)
 
 #==index for spatial area==========================
  coords<-NULL
@@ -259,6 +261,7 @@ for(timeStep in burn:simTime)
        SpaceCatAgeByFisher[timeStep-burn+1,chosenPatch[1],chosenPatch[2],p,f,flt]<-SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],p]*FishSel[p,flt]
       CatchByFisher[f,timeStep-burn+1,flt]<-potentialCatch
       CostByFisher[f,timeStep-burn+1,flt]<-CostPatch[chosenPatch[1],chosenPatch[2]]
+      ProfitByFisher[f,timeStep-burn+1,flt]<-CatchByFisher[f,timeStep-burn+1,flt]*price[flt] - CostByFisher[f,timeStep-burn+1,flt]
      }
    #==if they can catch more than capactity, they'll probably change selectivity and throw small ones back....think about that
     if(potentialCatch>maxCapac[flt])
@@ -350,6 +353,16 @@ for(i in 1:kmax)
  tempSpBio[i]<-sum(tempSNALT[,,i]*MatAge[i])
 SpawningBiomass[timeStep]<-sum(tempSpBio)
 
+tempSpBio<-rep(0,kmax)
+for(i in 1:kmax)
+ tempSpBio[i]<-sum(-1*(NoTakeZone-1)*tempSNALT[,,i]*MatAge[i])
+InsideMPAspbio[timeStep]<-sum(tempSpBio)
+
+tempSpBio<-rep(0,kmax)
+for(i in 1:kmax)
+ tempSpBio[i]<-sum(NoTakeZone*tempSNALT[,,i]*MatAge[i])
+OutsideMPAspbio[timeStep]<-sum(tempSpBio)
+
    if(timeStep%%yearMark == 0)
     {
     #==move to next year class
@@ -432,30 +445,10 @@ CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeCost
 if(FleetSeason[timeStep%%12+1]<FleetN)
  CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SeasonCost
 
-
-#==INSERT SAMPLING FUNCTION
- #==pass catch at age in year by patch (fish dependent)
- #==pass SpaceNumAtAgeT (independent)
-#==INSERT ASSESSMENT FUNCTION
- #==Call DPSA, mean length, density ratios, 
- #==harvest control rules
-#==adjust management
-  #increase or decrease MPA size
-  #increase or decrease fishers
-  #increase or decrease capacity
-  #increase or decrease size limit through fishery selectivity
-  #increase or decrease season
-  #eliminate a fleet
-  # first do non-adaptive runs where assessment is not required--set it and forget it
-  # then do adaptive management with uncertainty around management targets
-  # what's the probability of getting it 'right' in the non-adaptive runs?
-  # how does that compare to the
-  
- # what needs to be output and how
-
 } # end timestep
 
-list(CatchByFisher=CatchByFisher,CostByFisher=CostByFisher,ProfitByFisher=ProfitByFisher,CostOfManagement=CostOfManagement,SpawningBiomass=SpawningBiomass)
+list(CatchByFisher=CatchByFisher,CostByFisher=CostByFisher,ProfitByFisher=ProfitByFisher,CostOfManagement=CostOfManagement,
+     SpawningBiomass=SpawningBiomass,SpaceEffort=SpaceEffort,InsideMPAspbio=InsideMPAspbio,OutsideMPAspbio=OutsideMPAspbio)
 }
 
 
