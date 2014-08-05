@@ -10,5 +10,5 @@
 10,# costFish = cost per unit effort fishing
 0.05,# discRate = discount rate
 20,# TimeHor = time horizon for evaluation of policy
-10,# Fishers = number of fishers in the fishery
-10,# maxCapac = max capcity of a single fisherman in a time step (kg) (can also be used as a triplimit or permit regulation tool)
+120,# Fishers = number of fishers in the fishery
+20,# maxCapac = max capcity of a single fisherman in a time step (kg) (can also be used as a triplimit or permit regulation tool)

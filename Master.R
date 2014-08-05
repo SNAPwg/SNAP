@@ -203,7 +203,7 @@ SpaceNumAtAgeT[1:burn,,,]<-InitialPop(R0,M,kmax,SpaceR,SpaceC,MoveProb,coords,Mo
 #==calculate virgin spawning biomass (1843.584)================
 tempSpBio<-rep(0,kmax)
 for(i in 1:kmax)
- tempSpBio[i]<-sum(SpaceNumAtAgeT[burn,,,i]*MatAge[i])
+ tempSpBio[i]<-sum(SpaceNumAtAgeT[burn,,,i]*MatAge[i]*wgtAtAge[i])
 VirSpBio<-sum(tempSpBio)
 
 
@@ -222,6 +222,13 @@ for(timeStep in burn:simTime)
   NoTakeZone<-NoTakeZoneNULL
   if(timeStep>=initManage)
     NoTakeZone<-NoTakeZoneImp
+  
+  if(sum(dim(NoTakeZone)- c(SpaceR,SpaceC))!=0)
+  {
+    print("no take zone is of the wrong dimensions")
+    break
+  }
+  
  for(flt in 1:FleetN)
  {
    #==fishers decide where to fish============
@@ -231,14 +238,19 @@ for(timeStep in burn:simTime)
    
  tempBenefit<-array(dim=c(SpaceR,SpaceC,kmax))
  for(x in 1:nrow(FishSel))
-  tempBenefit[,,x]<-SpaceNumAtAgeT[timeStep,,,x]*FishSel[x,flt]*wgtAtAge[x]*price[flt]
+  tempBenefit[,,x]<-SpaceNumAtAgeT[timeStep,,,x]*FishSel[x,flt]*wgtAtAge[x]
+ BenefitPatch<-apply(tempBenefit,c(1,2),sum) 
 
+ #==if the amount of exploitable biomass exceeds capacity, set it to capacity
+ #==otherwise, when capacity is small, profits can be negative
+ BenefitPatch[BenefitPatch>maxCapac[flt]]<-maxCapac[flt]
+ #==translate to dollars
+ BenefitPatch<-BenefitPatch*price[flt]
  #==in dollars (through selected kg of biomass), this is what a fisher would catch by going to a given patch
-  BenefitPatch<-apply(tempBenefit,c(1,2),sum)
   BenefitPatch<-BenefitPatch*NoTakeZone
   NetBenefitPatch<-BenefitPatch-CostPatch
   if(timeStep==burn)OrigMaxNetBen<-max(NetBenefitPatch)
-  tempSNALT<-SpaceNumAtAgeT[timeStep,,,]
+   tempSNALT<-SpaceNumAtAgeT[timeStep,,,]
 
 #==all fishers select their patch and fish if the season is 'in'
 
@@ -299,12 +311,15 @@ for(timeStep in burn:simTime)
     SpaceEffort[timeStep-burn+1,chosenPatch[1],chosenPatch[2],flt]<-SpaceEffort[timeStep-burn+1,chosenPatch[1],chosenPatch[2],flt]+1
 
     #==update benefitPatch for next fisher=======================================
-    tempBenefit<-array(dim=c(SpaceR,SpaceC,kmax))
-    for(x in 1:nrow(FishSel))
-     tempBenefit[,,x]<-tempSNALT[,,x]*FishSel[x,flt]*wgtAtAge[x]*price[flt]
-    BenefitPatch<-apply(tempBenefit,c(1,2),sum)
-    BenefitPatch<-BenefitPatch*NoTakeZone
-    NetBenefitPatch<-BenefitPatch-CostPatch
+   
+   tempBenefit<-array(dim=c(SpaceR,SpaceC,kmax))
+   for(x in 1:nrow(FishSel))
+     tempBenefit[,,x]<-tempSNALT[,,x]*FishSel[x,flt]*wgtAtAge[x]
+   BenefitPatch<-apply(tempBenefit,c(1,2),sum) 
+   BenefitPatch[BenefitPatch>maxCapac[flt]]<-maxCapac[flt]
+   BenefitPatch<-BenefitPatch*price[flt]
+   BenefitPatch<-BenefitPatch*NoTakeZone
+   NetBenefitPatch<-BenefitPatch-CostPatch
     if(Graphs==T)
      {
       filled.contour(NetBenefitPatch,zlim=c(-OrigMaxNetBen,OrigMaxNetBen),y=seq(1,SpaceC),x=seq(1,SpaceR))
@@ -355,17 +370,17 @@ for(timeStep in burn:simTime)
 #==current SpBio
 tempSpBio<-rep(0,kmax)
 for(i in 1:kmax)
- tempSpBio[i]<-sum(tempSNALT[,,i]*MatAge[i])
+ tempSpBio[i]<-sum(tempSNALT[,,i]*MatAge[i]*wgtAtAge[i])
 SpawningBiomass[timeStep]<-sum(tempSpBio)
 
 tempSpBio<-rep(0,kmax)
 for(i in 1:kmax)
- tempSpBio[i]<-sum(-1*(NoTakeZoneImp-1)*tempSNALT[,,i]*MatAge[i])
+ tempSpBio[i]<-sum(-1*(NoTakeZoneImp-1)*tempSNALT[,,i]*MatAge[i]*wgtAtAge[i])
 InsideMPAspbio[timeStep]<-sum(tempSpBio)
 
 tempSpBio<-rep(0,kmax)
 for(i in 1:kmax)
- tempSpBio[i]<-sum(NoTakeZoneImp*tempSNALT[,,i]*MatAge[i])
+ tempSpBio[i]<-sum(NoTakeZoneImp*tempSNALT[,,i]*MatAge[i]*wgtAtAge[i])
 OutsideMPAspbio[timeStep]<-sum(tempSpBio)
 
    if(timeStep%%yearMark == 0)
@@ -380,15 +395,17 @@ OutsideMPAspbio[timeStep]<-sum(tempSpBio)
      if(RecDist==2)
       {
        #==find proportion of total SpBio in each area
-	 tempSpBioMat<-matrix(0,nrow=SpaceR,ncol=SpaceC)
-	 for(i in 1:kmax)
-	  tempSpBioMat<-tempSpBioMat+tempSNALT[,,i]*MatAge[i]
-       RecDistMat<-tempSpBioMat/sum(tempSpBioMat)   
-	 tempSNALT[,,1]<-Recruits*RecDistMat
-	 }
+    	 tempSpBioMat<-matrix(0,nrow=SpaceR,ncol=SpaceC)
+    	 for(i in 1:kmax)
+    	  tempSpBioMat<-tempSpBioMat+tempSNALT[,,i]*MatAge[i]
+        RecDistMat<-tempSpBioMat/sum(tempSpBioMat)   
+    	 tempSNALT[,,1]<-Recruits*RecDistMat
+    	 }
      if(RecDist==3)
       {
        ##===INSERT habitat.csv DISTRIBUTION==
+       RecDistMat<-habitat/sum(habitat)   
+       tempSNALT[,,1]<-(Recruits*as.matrix(RecDistMat))
       } 
      }
 

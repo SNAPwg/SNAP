@@ -22,13 +22,13 @@ PrintLifeHistory<-F
 #==open access===========================
 
 Life<-read.csv("LifeHistory.csv")                 # life history characteristics
-SimCTL<-read.csv("GrandSimCtl.csv",header=F)               # simulation controls
+SimCTL<-read.csv("GrandSimCtlBLZ.csv",header=F)               # simulation controls
 Fleets<-read.csv("Fleets.csv",header=F)                   # fleet characteristics  
 season<-read.csv("seasonNULL.csv",header=F)           # fishing seasons by fleet
 Samp <- read.csv("SamplingParams.csv")            # sampling controls for management
-NoTakeZoneNULL<-read.csv("notakezoneNULL.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
-NoTakeZoneImp<-read.csv("notakezone2.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
-habitat<-read.csv("habitatNULL.csv",header=F)         # habitat quality (recruitment suitability)
+NoTakeZoneNULL<-read.csv("notakezoneBLZNULL.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
+NoTakeZoneImp<-read.csv("notakezoneBLZ.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
+habitat<-read.csv("habitatBLZ.csv",header=F)         # habitat quality (recruitment suitability)
 
 OpenAccess<-Master(Life,SimCTL,Fleets,season,Samp,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs,GraphsFish,PrintLifeHistory)
 OAtotCatch<-apply(OpenAccess$CatchByFisher,2,sum,na.rm=T)
@@ -38,16 +38,21 @@ OAtotProfit<-apply(OpenAccess$ProfitByFisher,2,sum,na.rm=T)
 burnInt   <-SimCTL[grep('burn',SimCTL[,2]),1]
 simTimePlt <-SimCTL[grep('simTime',SimCTL[,2]),1]
 initManage<-SimCTL[grep('initManage',SimCTL[,2]),1]   # year in which to initiate management
+yearMark2  <-SimCTL[grep('yearMark',SimCTL[,2]),1]    	# number of time steps in a year
+SpcRow    <-SimCTL[grep('SpaceR',SimCTL[,2]),1]	    	# Rows in the grid space
+SpcCol	  <-SimCTL[grep('SpaceC',SimCTL[,2]),1]  			# cols in the grid spcae
 
-tempMat<-matrix(0,ncol=10,nrow=10)
+
+
+tempMat<-matrix(0,ncol=SpcCol,nrow=SpcRow)
 for(x in (initManage-burnInt):(simTimePlt-burnInt))
   tempMat<-tempMat+OpenAccess$SpaceEffort[x,,,]
 
-tempMat2<-matrix(0,ncol=10,nrow=10)
+tempMat2<-matrix(0,ncol=SpcCol,nrow=SpcRow)
 for(x in 1:(initManage-burnInt))
   tempMat2<-tempMat2+OpenAccess$SpaceEffort[x,,,]
 
-tempMat3<-matrix(0,ncol=10,nrow=10)
+tempMat3<-matrix(0,ncol=SpcCol,nrow=SpcRow)
 for(x in (simTimePlt-burnInt-36):(simTimePlt-burnInt))
   tempMat3<-tempMat3+OpenAccess$SpaceEffort[x,,,]
 
@@ -84,7 +89,11 @@ legend("topright",col=c(1,2),pch=16,legend=c("Outside MPA","Inside MPA"),bty='n'
 
 
 #== calculate statistics for before and after managmeent implementation
+#==find a range of years in each management regime for comparison
+#==when recruitment happens once a year, they must both start at the same time in the reproductive cycle
+
 timeBack<-60
+
 timeInd11<-initManage-timeBack-burnInt
 timeInd12<-initManage-burnInt
 

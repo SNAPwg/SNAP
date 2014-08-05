@@ -1,6 +1,6 @@
 
 
-Life<-read.csv("LifeHistory.csv")                 # life history characteristics
+Life<-read.csv("LifeHistoryRARE.csv")                 # life history characteristics
 SimCTL<-read.csv("GrandSimCtl.csv",header=F)               # simulation controls
 Fleets<-read.csv("Fleets.csv",header=F)                   # fleet characteristics  
 season<-read.csv("seasonNULL.csv",header=F)           # fishing seasons by fleet
@@ -17,13 +17,13 @@ yearMarkt<-SimCTL[grep('yearMark',SimCTL[,2]),1]	  	# number of time steps in a 
 burnt	<-SimCTL[grep('burn',SimCTL[,2]),1]  
 #==find the Capacity that produces MSY
 #==specify max capacity in function argument (10 is the max capacity at msy)
-capacityRange<-seq(7,11,.5)
+capacityRange<-seq(1,6,.5) # 3.5 is the MSY capacity for this scenario
 SustainableYield<-rep(0,length(capacityRange))
 
 for(x in 1:length(capacityRange))
 {
   Fleets[grep('maxCapac',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]<-capacityRange[x]
-  OpenAccess<-Master(Life,SimCTL,Fleets,season,Samp,NoTakeZone,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
+  OpenAccess<-Master(Life,SimCTL,Fleets,season,Samp,NoTakeZoneNULL,NoTakeZone,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
   SustainableYield[x]<-sum(apply(OpenAccess$CatchByFisher,2,sum,na.rm=T)[(simTimet-burnt-yearMarkt):(simTimet-burnt)])
   print(SustainableYield[x])
 }
