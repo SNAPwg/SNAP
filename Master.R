@@ -1,6 +1,6 @@
 #==this function runs the main population and economic dynamics for simulations given several inputs (usually in the form of csvs)
 
-Master<-function(Life,SimCTL,Fleets,season,Samp,NoTakeZone,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
+Master<-function(Life,SimCTL,Fleets,season,Samp,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
 {
 FleetN<-ncol(Fleets)-1
 
@@ -36,16 +36,18 @@ lenAtAge<-rep(0,kmax)
 wgtAtAge<-rep(0,kmax)
  for(k in 1:kmax)
   {
-   lenAtAge[k]<-Linf*(1-exp(-K*k-t0))
+   lenAtAge[k]<-Linf*(1-exp(-K*(k-t0)))
    wgtAtAge[k]<-wtA*lenAtAge[k]^wtB
   }
 
 #==cross simulation ctl=========================
-SpaceR	<-SimCTL[grep('SpaceR',SimCTL[,2]),1]	    	# Rows in the grid space
-SpaceC	<-SimCTL[grep('SpaceC',SimCTL[,2]),1]  			# cols in the grid spcae
-burn		<-SimCTL[grep('burn',SimCTL[,2]),1]    		  # burn in for movement equilibration (use option "Graphs" in "Initpop" to see that population is thoroughly mixed)
-simTime <-SimCTL[grep('simTime',SimCTL[,2]),1]     	# time steps for projection
-yearMark<-SimCTL[grep('yearMark',SimCTL[,2]),1]	  	# number of time steps in a year
+SpaceR	  <-SimCTL[grep('SpaceR',SimCTL[,2]),1]	    	# Rows in the grid space
+SpaceC	  <-SimCTL[grep('SpaceC',SimCTL[,2]),1]  			# cols in the grid spcae
+burn	  	<-SimCTL[grep('burn',SimCTL[,2]),1]    		  # burn in for movement equilibration (use option "Graphs" in "Initpop" to see that population is thoroughly mixed)
+simTime   <-SimCTL[grep('simTime',SimCTL[,2]),1]     	# time steps for projection
+yearMark  <-SimCTL[grep('yearMark',SimCTL[,2]),1]	  	# number of time steps in a year
+initManage<-SimCTL[grep('initManage',SimCTL[,2]),1]   # year in which to initiate management
+
 
 #==management costs==========================
 MPAsunk     <-SimCTL[grep('MPAsunk',SimCTL[,2]),1]  	# start up cost of enforcing an MPA
@@ -179,6 +181,8 @@ ProfitByFisher<-array(dim=c(max(Fishers),(simTime-burn+1),FleetN))
 CostByFisher<-array(dim=c(max(Fishers),simTime-burn+1,FleetN))
 SpawningBiomass<-rep(0,simTime-burn)
 CostOfManagement<-rep(0,simTime-burn)
+InsideMPAspbio<-rep(0,simTime-burn)
+OutsideMPAspbio<-rep(0,simTime-burn)
 
 #==index for spatial area==========================
  coords<-NULL
@@ -199,7 +203,7 @@ SpaceNumAtAgeT[1:burn,,,]<-InitialPop(R0,M,kmax,SpaceR,SpaceC,MoveProb,coords,Mo
 #==calculate virgin spawning biomass (1843.584)================
 tempSpBio<-rep(0,kmax)
 for(i in 1:kmax)
- tempSpBio[i]<-sum(SpaceNumAtAgeT[burn,,,i]*MatAge[i])
+ tempSpBio[i]<-sum(SpaceNumAtAgeT[burn,,,i]*MatAge[i]*wgtAtAge[i])
 VirSpBio<-sum(tempSpBio)
 
 
@@ -215,6 +219,16 @@ VirSpBio<-sum(tempSpBio)
 
 for(timeStep in burn:simTime) 
 { 
+  NoTakeZone<-NoTakeZoneNULL
+  if(timeStep>=initManage)
+    NoTakeZone<-NoTakeZoneImp
+  
+  if(sum(dim(NoTakeZone)- c(SpaceR,SpaceC))!=0)
+  {
+    print("no take zone is of the wrong dimensions")
+    break
+  }
+  
  for(flt in 1:FleetN)
  {
    #==fishers decide where to fish============
@@ -224,14 +238,19 @@ for(timeStep in burn:simTime)
    
  tempBenefit<-array(dim=c(SpaceR,SpaceC,kmax))
  for(x in 1:nrow(FishSel))
-  tempBenefit[,,x]<-SpaceNumAtAgeT[timeStep,,,x]*FishSel[x,flt]*wgtAtAge[x]*price[flt]
+  tempBenefit[,,x]<-SpaceNumAtAgeT[timeStep,,,x]*FishSel[x,flt]*wgtAtAge[x]
+ BenefitPatch<-apply(tempBenefit,c(1,2),sum) 
 
+ #==if the amount of exploitable biomass exceeds capacity, set it to capacity
+ #==otherwise, when capacity is small, profits can be negative
+ BenefitPatch[BenefitPatch>maxCapac[flt]]<-maxCapac[flt]
+ #==translate to dollars
+ BenefitPatch<-BenefitPatch*price[flt]
  #==in dollars (through selected kg of biomass), this is what a fisher would catch by going to a given patch
-  BenefitPatch<-apply(tempBenefit,c(1,2),sum)
   BenefitPatch<-BenefitPatch*NoTakeZone
   NetBenefitPatch<-BenefitPatch-CostPatch
   if(timeStep==burn)OrigMaxNetBen<-max(NetBenefitPatch)
-  tempSNALT<-SpaceNumAtAgeT[timeStep,,,]
+   tempSNALT<-SpaceNumAtAgeT[timeStep,,,]
 
 #==all fishers select their patch and fish if the season is 'in'
 
@@ -259,6 +278,7 @@ for(timeStep in burn:simTime)
        SpaceCatAgeByFisher[timeStep-burn+1,chosenPatch[1],chosenPatch[2],p,f,flt]<-SpaceNumAtAgeT[timeStep,chosenPatch[1],chosenPatch[2],p]*FishSel[p,flt]
       CatchByFisher[f,timeStep-burn+1,flt]<-potentialCatch
       CostByFisher[f,timeStep-burn+1,flt]<-CostPatch[chosenPatch[1],chosenPatch[2]]
+      ProfitByFisher[f,timeStep-burn+1,flt]<-CatchByFisher[f,timeStep-burn+1,flt]*price[flt] - CostByFisher[f,timeStep-burn+1,flt]
      }
    #==if they can catch more than capactity, they'll probably change selectivity and throw small ones back....think about that
     if(potentialCatch>maxCapac[flt])
@@ -291,12 +311,15 @@ for(timeStep in burn:simTime)
     SpaceEffort[timeStep-burn+1,chosenPatch[1],chosenPatch[2],flt]<-SpaceEffort[timeStep-burn+1,chosenPatch[1],chosenPatch[2],flt]+1
 
     #==update benefitPatch for next fisher=======================================
-    tempBenefit<-array(dim=c(SpaceR,SpaceC,kmax))
-    for(x in 1:nrow(FishSel))
-     tempBenefit[,,x]<-tempSNALT[,,x]*FishSel[x,flt]*wgtAtAge[x]*price[flt]
-    BenefitPatch<-apply(tempBenefit,c(1,2),sum)
-    BenefitPatch<-BenefitPatch*NoTakeZone
-    NetBenefitPatch<-BenefitPatch-CostPatch
+   
+   tempBenefit<-array(dim=c(SpaceR,SpaceC,kmax))
+   for(x in 1:nrow(FishSel))
+     tempBenefit[,,x]<-tempSNALT[,,x]*FishSel[x,flt]*wgtAtAge[x]
+   BenefitPatch<-apply(tempBenefit,c(1,2),sum) 
+   BenefitPatch[BenefitPatch>maxCapac[flt]]<-maxCapac[flt]
+   BenefitPatch<-BenefitPatch*price[flt]
+   BenefitPatch<-BenefitPatch*NoTakeZone
+   NetBenefitPatch<-BenefitPatch-CostPatch
     if(Graphs==T)
      {
       filled.contour(NetBenefitPatch,zlim=c(-OrigMaxNetBen,OrigMaxNetBen),y=seq(1,SpaceC),x=seq(1,SpaceR))
@@ -347,8 +370,18 @@ for(timeStep in burn:simTime)
 #==current SpBio
 tempSpBio<-rep(0,kmax)
 for(i in 1:kmax)
- tempSpBio[i]<-sum(tempSNALT[,,i]*MatAge[i])
+ tempSpBio[i]<-sum(tempSNALT[,,i]*MatAge[i]*wgtAtAge[i])
 SpawningBiomass[timeStep]<-sum(tempSpBio)
+
+tempSpBio<-rep(0,kmax)
+for(i in 1:kmax)
+ tempSpBio[i]<-sum(-1*(NoTakeZoneImp-1)*tempSNALT[,,i]*MatAge[i]*wgtAtAge[i])
+InsideMPAspbio[timeStep]<-sum(tempSpBio)
+
+tempSpBio<-rep(0,kmax)
+for(i in 1:kmax)
+ tempSpBio[i]<-sum(NoTakeZoneImp*tempSNALT[,,i]*MatAge[i]*wgtAtAge[i])
+OutsideMPAspbio[timeStep]<-sum(tempSpBio)
 
    if(timeStep%%yearMark == 0)
     {
@@ -362,15 +395,17 @@ SpawningBiomass[timeStep]<-sum(tempSpBio)
      if(RecDist==2)
       {
        #==find proportion of total SpBio in each area
-	 tempSpBioMat<-matrix(0,nrow=SpaceR,ncol=SpaceC)
-	 for(i in 1:kmax)
-	  tempSpBioMat<-tempSpBioMat+tempSNALT[,,i]*MatAge[i]
-       RecDistMat<-tempSpBioMat/sum(tempSpBioMat)   
-	 tempSNALT[,,1]<-Recruits*RecDistMat
-	 }
+    	 tempSpBioMat<-matrix(0,nrow=SpaceR,ncol=SpaceC)
+    	 for(i in 1:kmax)
+    	  tempSpBioMat<-tempSpBioMat+tempSNALT[,,i]*MatAge[i]
+        RecDistMat<-tempSpBioMat/sum(tempSpBioMat)   
+    	 tempSNALT[,,1]<-Recruits*RecDistMat
+    	 }
      if(RecDist==3)
       {
        ##===INSERT habitat.csv DISTRIBUTION==
+       RecDistMat<-habitat/sum(habitat)   
+       tempSNALT[,,1]<-(Recruits*as.matrix(RecDistMat))
       } 
      }
 
@@ -411,10 +446,10 @@ filled.contour(tempSNALT[,,2],main="postfishery, postmovement: age 2",zlim=c(0,9
 
 #==costs of management
 
-if(sum(1-NoTakeZone)>1 & timeStep==burn)
+if(sum(1-NoTakeZone)>1 & timeStep==initManage)
   CostOfManagement[timeStep]<- CostOfManagement[timeStep] + MPAsunk
 
-if(!is.na(SizeLimit[flt])& timeStep==burn)
+if((SizeLimit[flt]>0)& timeStep==initManage)
   CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeSunk
 
 #==if there are any months in which fishing is not allowed, add sunk costs
@@ -422,40 +457,22 @@ FleetSeason<-season[,2]
 FleetSeason[is.na(FleetSeason)]<-0
 if(FleetN>1)
  FleetSeason<-apply(!is.na(season[,2:ncol(season)]),1,sum)
-if(any(FleetSeason<FleetN,na.rm=T) & timeStep==burn) 
+if(any(FleetSeason<FleetN,na.rm=T) & timeStep==initManage) 
   CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SeasonSunk 
 
 CostOfManagement[timeStep]<- CostOfManagement[timeStep] + sum(1-NoTakeZone)*MPAcost
-CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeCost
+
+if((SizeLimit[flt])>0)
+ CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeCost
 
 #==if all fisheries are open, there is no cost of enforcing a season
 if(FleetSeason[timeStep%%12+1]<FleetN)
  CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SeasonCost
 
-
-#==INSERT SAMPLING FUNCTION
- #==pass catch at age in year by patch (fish dependent)
- #==pass SpaceNumAtAgeT (independent)
-#==INSERT ASSESSMENT FUNCTION
- #==Call DPSA, mean length, density ratios, 
- #==harvest control rules
-#==adjust management
-  #increase or decrease MPA size
-  #increase or decrease fishers
-  #increase or decrease capacity
-  #increase or decrease size limit through fishery selectivity
-  #increase or decrease season
-  #eliminate a fleet
-  # first do non-adaptive runs where assessment is not required--set it and forget it
-  # then do adaptive management with uncertainty around management targets
-  # what's the probability of getting it 'right' in the non-adaptive runs?
-  # how does that compare to the
-  
- # what needs to be output and how
-
 } # end timestep
 
-list(CatchByFisher=CatchByFisher,CostByFisher=CostByFisher,ProfitByFisher=ProfitByFisher,CostOfManagement=CostOfManagement,SpawningBiomass=SpawningBiomass)
+list(CatchByFisher=CatchByFisher,CostByFisher=CostByFisher,ProfitByFisher=ProfitByFisher,CostOfManagement=CostOfManagement,
+     SpawningBiomass=SpawningBiomass,SpaceEffort=SpaceEffort,InsideMPAspbio=InsideMPAspbio,OutsideMPAspbio=OutsideMPAspbio)
 }
 
 
