@@ -115,8 +115,8 @@ CollectData = function(ttStep, simTime, burn, FleetN, DataParams, NoTakeZone, Sp
   SurveyCatchAtAge <- GoSurvey(timeStep, SpaceNumAtAgeT, DataParams, FISurvMat, kmax)
   
   ### Collect FI Data
-  CatchFI <- CollectCatchFI(timeStep,SurveyCatchAtAge,collCatchFI,DataParams$sigSurvey,wgtAtAge,DataParams$Aggregate)
-  CPUEFI <- CollectSurvCPUE(SurveyCatchAtAge,DataParams$SurveyF,DataParams$Survey_q,collEffortFI,DataParams$Aggregate,DataParams$sigSurvey,wgtAtAge,collCatchFI)
+  FICatch <- CollectCatchFI(timeStep,SurveyCatchAtAge,collCatchFI,DataParams$sigSurvey,wgtAtAge,DataParams$Aggregate)
+  FICPUE <- CollectSurvCPUE(SurveyCatchAtAge,DataParams$SurveyF,DataParams$Survey_q,collEffortFI,DataParams$Aggregate,DataParams$sigSurvey,wgtAtAge,collCatchFI)
   #numFI <- CollectSurvnum(Survey$CatchatSize_FI,survEffort,SurvPatch,collCatchFI,FFleet,Aggregate)
   
   ####Return list of collected data
@@ -127,8 +127,8 @@ CollectData = function(ttStep, simTime, burn, FleetN, DataParams, NoTakeZone, Sp
   DataOut$FDCPUE<-FDCPUEOUTPUT 
   DataOut$AgeFD <- AgeFDMatOUTPUT
   DataOut$SizeFD <- SizeFDMatOUTPUT   
-  DataOut$CatchFI <- CatchFI
-  DataOut$CPUEFI <- CPUEFI
+  DataOut$FICatch <- FICatch
+  DataOut$FICPUE <- FICPUE
 #   DataOut$numFI <- numFI
 #   DataOut$AgeFI <- AgeFI
 #   DataOut$SizeFI <- SizeFI
@@ -431,27 +431,27 @@ CollectSurvCPUE <- function(SurveyCatchAtAge,SurveyF,Survey_q,collEffortFI,Aggre
   return(Final)
 } 
 
-# # #collect CPUE in numbers by size -- needed in dtree
-# # CollectSurvnum <- function(CatchatSizeFI,survEffort,SurvPatch,collCatchFI,FFleet,Aggregate){
-# #   SurvEffTemp <- replace(((survEffort/sum(SurvPatch))*SurvPatch), survEffort*SurvPatch == 0, NA) #avoiding dividing by zero, and effort is only allocated to patches that are surveyed
-# #   # SurvEffTemp <- replace(((survEffort/length(SurvPatch))*SurvPatch), survEffort*SurvPatch == 0, NA) #avoiding dividing by zero
-# #   if (length(collCatchFI) >1){
-# #     #SurvCatchNums <- as.matrix(CatchatSizeFI[1:FFleet$NumSizes,which(collCatchFI==1)])
-# #     SurvCatchNums <- as.matrix(CatchatSizeFI[1:FFleet$NumSizes,])
-# #   }else{
-# #     #SurvCatchNums <- CatchatSizeFI[1:FFleet$NumSizes,]*collCatchFI  
-# #     SurvCatchNums <- CatchatSizeFI[1:FFleet$NumSizes,]
-# #   }
-# #   numCPUE_FI <- round(SurvCatchNums,0)   ##Converts to whole numbers   
-# #   
-# #   SurvEffMat <- matrix(SurvEffTemp,nrow=dim(numCPUE_FI)[1],ncol=dim(numCPUE_FI)[2],byrow=T)
-# #   if (Aggregate == 2){
-# #     Final <- numCPUE_FI/SurvEffMat
-# #   } else {
-# #     Final <- rowSums(numCPUE_FI,na.rm=TRUE)/sum(SurvEffTemp,na.rm=TRUE)
-# #   }
-# #   return(Final)
-# # }
+#collect CPUE in numbers by size -- needed in dtree
+# CollectSurvnum <- function(SurveyCatchAtAge,survEffort,SurvPatch,collCatchFI,FFleet,Aggregate){
+#   SurvEffTemp <- replace(((survEffort/sum(SurvPatch))*SurvPatch), survEffort*SurvPatch == 0, NA) #avoiding dividing by zero, and effort is only allocated to patches that are surveyed
+#   # SurvEffTemp <- replace(((survEffort/length(SurvPatch))*SurvPatch), survEffort*SurvPatch == 0, NA) #avoiding dividing by zero
+#   if (length(collCatchFI) >1){
+#     #SurvCatchNums <- as.matrix(CatchatSizeFI[1:FFleet$NumSizes,which(collCatchFI==1)])
+#     SurvCatchNums <- as.matrix(CatchatSizeFI[1:FFleet$NumSizes,])
+#   }else{
+#     #SurvCatchNums <- CatchatSizeFI[1:FFleet$NumSizes,]*collCatchFI  
+#     SurvCatchNums <- CatchatSizeFI[1:FFleet$NumSizes,]
+#   }
+#   numCPUE_FI <- round(SurvCatchNums,0)   ##Converts to whole numbers   
+#   
+#   SurvEffMat <- matrix(SurvEffTemp,nrow=dim(numCPUE_FI)[1],ncol=dim(numCPUE_FI)[2],byrow=T)
+#   if (Aggregate == 2){
+#     Final <- numCPUE_FI/SurvEffMat
+#   } else {
+#     Final <- rowSums(numCPUE_FI,na.rm=TRUE)/sum(SurvEffTemp,na.rm=TRUE)
+#   }
+#   return(Final)
+# }
 # # 
 # # #Collect Age Data -- assign ages to size data
 # # CollectSurvAges <- function(ttStep,collAgeFI,fishPop,nAgeFI,Survey,FIsurvPatch){
