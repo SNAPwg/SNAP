@@ -117,11 +117,15 @@ if(DataParams$Aggregate == 0){
   FDCPUEData <- array(dim=c(simTime-burn+1, SpaceR, SpaceC, FleetN))
   FDAgeData <- array(NA,dim=c(simTime-burn+1, DataParams$nAgeFD,SpaceR, SpaceC, FleetN))
   FDSizeData <- array(NA,dim=c(simTime-burn+1, DataParams$nSizeFD,SpaceR, SpaceC, FleetN))
+  FICatchData <- array(dim=c(simTime-burn+1, SpaceR, SpaceC))
+  FICPUEData <- array(dim=c(simTime-burn+1, SpaceR, SpaceC))
 } else {
   FDCatchData <- array(dim=c(simTime-burn+1, FleetN))
   FDCPUEData <- array(dim=c(simTime-burn+1, FleetN))
   FDAgeData <- array(NA,dim=c(simTime-burn+1, DataParams$nAgeFD*SpaceR*SpaceC, FleetN))
   FDSizeData <- array(NA,dim=c(simTime-burn+1, DataParams$nSizeFD*SpaceR*SpaceC, FleetN))
+  FICatchData <- array(dim=c(simTime-burn+1))
+  FICPUEData <- array(dim=c(simTime-burn+1))
 }
 
 PortLc<-c(PortX,PortY) #Does this get used anywhere?
@@ -354,6 +358,8 @@ for(timeStep in burn:simTime)
         } else {
         FDCatchData[(timeStep-burn),,,] <- Data$FDCatch
         FDCPUEData[(timeStep-burn),,,] <- Data$FDCPUE
+        FICatchData[(timeStep-burn),,] <- Data$FICatch
+        FICPUEData[(timeStep-burn),,] <- Data$FICPUE
         }
       FDAgeData[(timeStep-burn),,,,] <- Data$AgeFD
       FDSizeData[(timeStep-burn),,,,] <- Data$SizeFD
@@ -364,12 +370,17 @@ for(timeStep in burn:simTime)
       } else {
         FDCatchData[(timeStep-burn),] <- Data$FDCatch
         FDCPUEData[(timeStep-burn),] <- Data$FDCPUE
+        FICatchData[(timeStep-burn)] <- Data$FICatch
+        FICPUEData[(timeStep-burn)] <- Data$FICPUE
       }
       FDAgeData[(timeStep-burn),,] <- Data$AgeFD
       FDSizeData[(timeStep-burn),,] <- Data$SizeFD
     }
 
     }# if sample time steps
+  
+  ######## Should add if statement here with a management loop####
+  ####################################################
   } #end if for season
  } #end fleet 
 

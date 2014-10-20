@@ -4,6 +4,8 @@
 #==write csv files
 #==scenarios: changing MPA size, changing size limit, changing season length, changing effort input through fishers, etc.
 
+##Hi Dan!
+
 require(animation)
 require(caTools)
 source("Master.R")
