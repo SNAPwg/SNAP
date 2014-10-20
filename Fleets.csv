@@ -1,14 +1,14 @@
-0,# SizeLimit = indicates if a size limit is in place
-1,# Sel50 =selectivity by age (50%)
-2,# Sel95 = selectivity by age (95%)
+0,# SizeLimit = indicates if a size limit is in place (76.2 Wade 2012)
+2.68,# Sel50 =selectivity by age (50%) (informing spatial model methods)
+3.24,# Sel95 = selectivity by age (95%)
 1,# q = fishery catchability
 1,# PortX = location of the port of entry (x_y)
 1,# PortY = location of the port of entry (x_y)
-12,# season = number months in which fishing is allowed (no season == 12 )
-3,# price (ex-vessel price per unit havest (kg)
-3,# costTrv ==cost to travel one patch
-10,# costFish = cost per unit effort fishing
+0.01115441,# price (price per unit havest (g total weight)--Informing spatial model methods.xls)
+2,# costTrv ==cost of travel in a timestep per fisher per g
+5,# costFish = cost per unit effort fishing per timestep per fisher at virgin levels per g 
 0.05,# discRate = discount rate
 20,# TimeHor = time horizon for evaluation of policy
-10,# Fishers = number of fishers in the fishery
-10,# maxCapac = max capcity of a single fisherman in a time step (kg) (can also be used as a triplimit or permit regulation tool)
+25,# Fishers = number of fishers in the fishery (Babcock 2014)
+75646.63,# maxCapac = max capcity of a single fisherman in a time step (g total WEIGHT--Informing spatial model methods.xls) 
+20,# costSteep = intercept of negative linear relationship between cost and biomass

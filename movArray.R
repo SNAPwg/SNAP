@@ -17,7 +17,7 @@ movArray<-function(SpaceR,SpaceC,sdx,sdy)
    for(k in 1:SpaceC)
      SpaceIn[j,k,h]<-exp(-(((coords[h,1]-j))^2/(2*sdx^2)+((coords[h,2]-k))^2/(2*sdy^2)))
 
- # normalize so that it sums to 1 (effectively wraps around)
+ # normalize so that it sums to 1 (effectively reflects)
  for(h in 1:nrow(coords))
   SpaceIn[,,h]<-SpaceIn[,,h]/sum(SpaceIn[,,h])
 

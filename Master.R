@@ -67,6 +67,7 @@ Sel95		  <-as.numeric(Fleets[grep('Sel95',Fleets[,ncol(Fleets)]),seq(1,ncol(Flee
 q		      <-as.numeric(Fleets[grep('catchability',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])  		# fishery catchability coefficient (what fraction of the exploitable biomass in a patch is catchable)
 PortX 	  <-as.numeric(Fleets[grep('PortX',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]) 	# location of the port of entry (x,y)
 PortY   	<-as.numeric(Fleets[grep('PortY',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] )  # location of the port of entry (x,y)
+costSteep <-as.numeric(Fleets[grep('costSteep',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] )  # determines the influence of catch rate on fisher behavior
 
 #==Sampling Params ==============================
 DataParams <- NULL
@@ -180,6 +181,7 @@ CatchByFisher<-array(dim=c(max(Fishers),(simTime-burn+1),FleetN))
 ProfitByFisher<-array(dim=c(max(Fishers),(simTime-burn+1),FleetN))
 CostByFisher<-array(dim=c(max(Fishers),simTime-burn+1,FleetN))
 SpawningBiomass<-rep(0,simTime-burn)
+NumbersExplt<-rep(0,simTime-burn)
 CostOfManagement<-rep(0,simTime-burn)
 InsideMPAspbio<-rep(0,simTime-burn)
 OutsideMPAspbio<-rep(0,simTime-burn)
@@ -213,12 +215,12 @@ VirSpBio<-sum(tempSpBio)
      {
       #setwd("C:/Users/Cody/Desktop/spatial gif")
       #dev.new(height=7,width=7)
-	    ani.record(reset=TRUE)
-      ani.options(interval=.01)	
+# 	    ani.record(reset=TRUE)
+#       ani.options(interval=.01)	
      }
 
 for(timeStep in burn:simTime) 
-{ 
+    { 
   NoTakeZone<-NoTakeZoneNULL
   if(timeStep>=initManage)
     NoTakeZone<-NoTakeZoneImp
@@ -234,24 +236,29 @@ for(timeStep in burn:simTime)
    #==fishers decide where to fish============
    #==initial costs
    Distance<-sqrt((row(SpaceUse)-PortX[flt])^2 + (col(SpaceUse)-PortY[flt])^2)
-   CostPatch<-Distance*costTrv[flt]+costFish[flt]
-   
+ 
  tempBenefit<-array(dim=c(SpaceR,SpaceC,kmax))
  for(x in 1:nrow(FishSel))
   tempBenefit[,,x]<-SpaceNumAtAgeT[timeStep,,,x]*FishSel[x,flt]*wgtAtAge[x]
  BenefitPatch<-apply(tempBenefit,c(1,2),sum) 
 
- #==if the amount of exploitable biomass exceeds capacity, set it to capacity
- #==otherwise, when capacity is small, profits can be negative
- BenefitPatch[BenefitPatch>maxCapac[flt]]<-maxCapac[flt]
+ if(timeStep==burn)OrigMaxBen<-max(BenefitPatch)
+ 
+ #==costs depend both on the distance from port and the density of fish
+  #tempCostFish<-costFish[flt]*(OrigMaxBen/BenefitPatch)^costSteep
+  tempCostFish<-(1+(costSteep-(costSteep)*(BenefitPatch/OrigMaxBen)))*costFish[flt]
+  CostPatch<-Distance*costTrv[flt]+tempCostFish
+ #==cap potential benefit at what can be removed after calculating cost of fishing
+  BenefitPatch[BenefitPatch>maxCapac[flt]]<-maxCapac[flt]
  #==translate to dollars
- BenefitPatch<-BenefitPatch*price[flt]
+  BenefitPatch<-BenefitPatch*price[flt]
  #==in dollars (through selected kg of biomass), this is what a fisher would catch by going to a given patch
   BenefitPatch<-BenefitPatch*NoTakeZone
   NetBenefitPatch<-BenefitPatch-CostPatch
   if(timeStep==burn)OrigMaxNetBen<-max(NetBenefitPatch)
-   tempSNALT<-SpaceNumAtAgeT[timeStep,,,]
-
+ 
+ tempSNALT<-SpaceNumAtAgeT[timeStep,,,]
+ if(timeStep==burn)OrigTempSNALT<-max(tempSNALT[,,3])
 #==all fishers select their patch and fish if the season is 'in'
 
  if(any(timeStep%%12==(which(!is.na(season[,flt+1]))-1)))
@@ -285,7 +292,7 @@ for(timeStep in burn:simTime)
     {
      #===find harvest rate that would put the fisher at max capacity===
      maxHarv<-1
-     minHarv<-.0000001
+     minHarv<-.000000001
      for(x in 1:25)
       {
        useHarv<-(maxHarv+minHarv)/2
@@ -311,20 +318,24 @@ for(timeStep in burn:simTime)
     SpaceEffort[timeStep-burn+1,chosenPatch[1],chosenPatch[2],flt]<-SpaceEffort[timeStep-burn+1,chosenPatch[1],chosenPatch[2],flt]+1
 
     #==update benefitPatch for next fisher=======================================
-   
    tempBenefit<-array(dim=c(SpaceR,SpaceC,kmax))
    for(x in 1:nrow(FishSel))
      tempBenefit[,,x]<-tempSNALT[,,x]*FishSel[x,flt]*wgtAtAge[x]
    BenefitPatch<-apply(tempBenefit,c(1,2),sum) 
-   BenefitPatch[BenefitPatch>maxCapac[flt]]<-maxCapac[flt]
+
+#    tempCostFish<-costFish[flt]*(OrigMaxBen/BenefitPatch)^costSteep
+   tempCostFish<-(1+(costSteep-(costSteep)*(BenefitPatch/OrigMaxBen)))*costFish[flt]
+   CostPatch<-Distance*costTrv[flt]+tempCostFish
+   BenefitPatch[BenefitPatch>maxCapac[flt]]<-maxCapac[flt]   
    BenefitPatch<-BenefitPatch*price[flt]
-   BenefitPatch<-BenefitPatch*NoTakeZone
+   BenefitPatch<-BenefitPatch*NoTakeZone   
    NetBenefitPatch<-BenefitPatch-CostPatch
     if(Graphs==T)
      {
-      filled.contour(NetBenefitPatch,zlim=c(-OrigMaxNetBen,OrigMaxNetBen),y=seq(1,SpaceC),x=seq(1,SpaceR))
+      filled.contour(as.matrix(NetBenefitPatch),y=seq(1,SpaceC),x=seq(1,SpaceR))
+       #,zlim=c(-OrigMaxNetBen,OrigMaxNetBen)
       mtext(side=3,paste("Timestep = ",timeStep))
-      ani.record()
+     # ani.record()
      }
 
     }
@@ -368,6 +379,11 @@ for(timeStep in burn:simTime)
 #==recruitment (happens once a year)
 #==calculate recruits based on total spawnign biomass, allocate them according to either the spawning biomass in a patch or evenly.
 #==current SpBio
+tempNum<-rep(0,kmax)
+for(i in 1:kmax)
+  tempNum[i]<-sum(tempSNALT[,,i]*FishSel[i,flt])
+NumbersExplt[timeStep]<-sum(tempNum)
+
 tempSpBio<-rep(0,kmax)
 for(i in 1:kmax)
  tempSpBio[i]<-sum(tempSNALT[,,i]*MatAge[i]*wgtAtAge[i])
@@ -428,12 +444,12 @@ for(age in 1:kmax)
 if(GraphsFish==T)
 {
 
-filled.contour(temp1[,,2],main="postfishery, premovement: age 2",zlim=c(0,9))
+filled.contour(temp1[,,3],main="postfishery, premovement: age 2",zlim=c(0,2*OrigTempSNALT))
       mtext(side=3,paste("Timestep = ",timeStep))
-      ani.record()
-filled.contour(tempSNALT[,,2],main="postfishery, postmovement: age 2",zlim=c(0,9))
+#       ani.record()
+filled.contour(tempSNALT[,,3],main="postfishery, postmovement: age 2",zlim=c(0,2*OrigTempSNALT))
       mtext(side=3,paste("Timestep = ",timeStep))
-      ani.record()
+#       ani.record()
 }
  #==update popdym
  if(timeStep<simTime)
@@ -472,7 +488,8 @@ if(FleetSeason[timeStep%%12+1]<FleetN)
 } # end timestep
 
 list(CatchByFisher=CatchByFisher,CostByFisher=CostByFisher,ProfitByFisher=ProfitByFisher,CostOfManagement=CostOfManagement,
-     SpawningBiomass=SpawningBiomass,SpaceEffort=SpaceEffort,InsideMPAspbio=InsideMPAspbio,OutsideMPAspbio=OutsideMPAspbio)
+     SpawningBiomass=SpawningBiomass,SpaceEffort=SpaceEffort,InsideMPAspbio=InsideMPAspbio,OutsideMPAspbio=OutsideMPAspbio,
+     ExploitableNumbers=NumbersExplt)
 }
 
 
