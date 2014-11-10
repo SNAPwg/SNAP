@@ -2,8 +2,8 @@
 12,# SpaceC = columns in the simulated grid space
 1,# detRec = deterministic recruitment? (1= deterministic)
 25,# burn = burn in for movement initial equilibration of movement (use option Graphs in ""Initpop"" to see that population is thoroughly mixed)
-220,# initManage = the time step at which management is initiated (do these in multiples of yrMark)
-225,# simTime = time steps for projections (do these in multiples of yrMark)
+120,# initManage = the time step at which management is initiated (do these in multiples of yrMark)
+125,# simTime = time steps for projections (do these in multiples of yrMark)
 12,# number of time steps in a year (e.g. yearMark==12 means a monthly time step)
 100,# MPAsunk = start up cost of enforcing an MPA
 10,# MPAcost = cost of maintaining a unit of MPA per unit time
