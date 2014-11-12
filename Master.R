@@ -165,10 +165,10 @@ if(PrintLifeHistory==T)
  mtext(side=2,"Length (cm)",line=2)
  mtext(side=1,"Age (yr)",line=2)
  
- filled.contour(matrix(as.numeric(unlist(habitat)),ncol=SpaceC),y=seq(1,SpaceR),x=seq(1,SpaceC)) 
+ filled.contour(matrix(as.numeric(unlist(habitat)),ncol=SpaceC),x=seq(1,SpaceR),y=seq(1,SpaceC)) 
  mtext(side=3,"Habitat quality")
 
- filled.contour(matrix(as.numeric(unlist(NoTakeZone)),ncol=SpaceC),y=seq(1,SpaceR),x=seq(1,SpaceC)) 
+ filled.contour(matrix(as.numeric(unlist(NoTakeZone)),ncol=SpaceC),x=seq(1,SpaceR),y=seq(1,SpaceC)) 
  mtext(side=3,"No take zones (0)")
 }
 
