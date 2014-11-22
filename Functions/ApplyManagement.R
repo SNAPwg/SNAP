@@ -1,41 +1,40 @@
 ApplyManagement<- function(Strat,Management)
 {
-  
-    
+      
   if (Strat$SizeLimit==1)
   {
-    Fleets[grep('SizeLimit',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]<<- Management$SizeLimit
+    Fleets[grep('SizeLimit',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]<- Management$SizeLimit
   }
   
   if (Strat$NTZ==1)
   {
-    NoTakeZoneImp<<- Management$NTZ
+    NoTakeZoneImp<- Management$NTZ
   }
 
   
   if (Strat$Season==1)
   {
-    season<<- Management$Season
+    season<- Management$Season
   }
 
   if (Strat$Effort==1)
   {
-    Fleets[grep('Fishers',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]<<- Management$Effort
+    Fleets[grep('Fishers',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]<- Management$Effort
     
   }
 
   if (Strat$Gear==1)
   {
-    Fleets[grep('q',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]<<- Management$Gear
+    Fleets[grep('q',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]<- Management$Gear
     
   }
 
   if (Strat$Tax==1)
   {
-    Fleets[grep('costFish',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]<<- Fleets[grep('costFish',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] * Management$Tax
+    Fleets[grep('costFish',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]<- Fleets[grep('costFish',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] * Management$Tax
     
   }
   
   
-  
+  return(list(Fleets=Fleets,season=season,NoTakeZoneImp=NoTakeZoneImp))
 }
