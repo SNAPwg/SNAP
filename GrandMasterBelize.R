@@ -5,6 +5,8 @@
 #==scenarios: changing MPA size, changing size limit, changing season length, changing effort input through fishers, etc.
 
 ##Hi Dan!
+rm(list=ls())
+
 
 require(animation)
 require(caTools)
@@ -15,7 +17,6 @@ source("movArray.R")
 source("InitialPop.R")
 source("Recruitment.R")
 source("samplingFunc.R")
-#rm(list=ls())
 
 Graphs<-F
 GraphsFish<-F
@@ -31,7 +32,7 @@ Samp <- read.csv("SamplingParams.csv")            # sampling controls for manage
 NoTakeZoneNULL<-read.csv("notakezoneBLZNULL.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
 NoTakeZoneImp<-read.csv("notakezoneBLZ.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
 habitat<-read.csv("habitatBLZ.csv",header=F)         # habitat quality (recruitment suitability)
-filled.contour(z=habitat)
+# filled.contour(z=habitat)
 #============================================================
 #==find Rzero
 #=run with specific R0 once
