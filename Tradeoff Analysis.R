@@ -75,7 +75,7 @@ Management$Season<- season
 
 Management$Quota<- 10000
 
-Management$Effort<- 1
+Management$Effort<- 5
 
 Management$Gear<- 0.5
 
@@ -92,7 +92,7 @@ for (i in 1:dim(ManageStrats)[1]) #Can replace this with mclapply later if this 
 {
 
   
-ManageSims[[i]]<-Master(Life,SimCTL,Fleets,season,Samp,ManageStrats[i,],Management,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=T)
+ManageSims[[i]]<-Master(Life,SimCTL,Fleets,season,Samp,ManageStrats[i,],Management,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
 
 ManageSims[[i]]$CostOfManagement
 
@@ -104,6 +104,11 @@ Fleets<- DefaultFleet
 
 }
 
+M<- (ManageSims[[1]]$CatchByFisher)[,,1]
+
+M<- as.matrix(M)
+
+Test(2)
 # Define life history uncertainty
 
 
