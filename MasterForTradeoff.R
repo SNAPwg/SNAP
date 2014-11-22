@@ -48,70 +48,11 @@ simTime   <-SimCTL[grep('simTime',SimCTL[,2]),1]     	# time steps for projectio
 yearMark  <-SimCTL[grep('yearMark',SimCTL[,2]),1]	  	# number of time steps in a year
 initManage<-SimCTL[grep('initManage',SimCTL[,2]),1]   # year in which to initiate management
 
+# ShapeFishery(Life=Life,Fleets=Fleets,SimCTL=SimCTL,NoTakeZones=NoTakeZoneNULL,Samp=Samp) #Assign fishery characteristics
 
-#==management costs==========================
-MPAsunk     <-SimCTL[grep('MPAsunk',SimCTL[,2]),1]  	# start up cost of enforcing an MPA
-MPAcost	    <-SimCTL[grep('MPAcost',SimCTL[,2]),1]		# cost of maintaining a unit of MPA per unit time
-SizeSunk	  <-SimCTL[grep('SizeSunk',SimCTL[,2]),1]		# start up cost of enforcing a size limit
-SizeCost    <-SimCTL[grep('SizeCost',SimCTL[,2]),1]		# cost of enforcing a size limit per unit of time per port
-SeasonSunk	<-SimCTL[grep('SeasonSunk',SimCTL[,2]),1]		# start up cost of enforcing a season
-SeasonCost	<-SimCTL[grep('SeasonCost',SimCTL[,2]),1]		# cost of enforcing a season per unit of time
+source('ShapeFishery.R') #Assign fishery characteristics
 
-#==management auxilliary benefits======================
-MPAtourism	<-SimCTL[grep('MPAtourism',SimCTL[,2]),1]		# average revenue generated per unit MPA per unit time for tourism in an MPA
-
-#==fishery characteristics===================
-SizeLimit	<-as.numeric(Fleets[grep('SizeLimit',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] )
-Sel50		  <-as.numeric(Fleets[grep('Sel50',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] )		# selectivity by length (9 by len)
-Sel95		  <-as.numeric(Fleets[grep('Sel95',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]	)	# selectividad by len (13 by len)
-q		      <-as.numeric(Fleets[grep('catchability',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])  		# fishery catchability coefficient (what fraction of the exploitable biomass in a patch is catchable)
-PortX 	  <-as.numeric(Fleets[grep('PortX',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]) 	# location of the port of entry (x,y)
-PortY   	<-as.numeric(Fleets[grep('PortY',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] )  # location of the port of entry (x,y)
-costSteep <-as.numeric(Fleets[grep('costSteep',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] )  # determines the influence of catch rate on fisher behavior
-NoTakeZone<-NoTakeZoneNULL
-
-#==Sampling Params ==============================
-DataParams <- NULL
-DataParams$histCatchFD    <-Samp[grep('histCatchFD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]              # Collect historical Catch Data?
-DataParams$histEffortFD  	<-Samp[grep('histEffortFD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]           	  # Collect historical CPUE Data?
-DataParams$histStartYr	 	<-Samp[grep('histStartYr',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	            # time step in which historical data was first collected
-DataParams$Aggregate   	 	<-Samp[grep('Aggregate',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	# Aggregate data over space? 1 for yes, 2 for no.
-DataParams$SampStartYr	 	<-Samp[grep('SampStartYr',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]            	# time step in which current sampling program begins
-DataParams$SampFreq		    <-Samp[grep('SampFreq',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]       	# Sampling Frequency
-DataParams$sigHistCatch  	<-Samp[grep('sigHistCatch',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]         		  	# Standard deviation of observation error on total catches. If no error, sigHistCatch=0.
-DataParams$catchBias	  	<-Samp[grep('catchBias',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	              # Bias in catch reporting. Scalar between (-1, 1). 0 equals no bias.
-DataParams$Sel50FI       	<-Samp[grep('Sel50FI',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	      # Survey selectivity at age
-DataParams$Sel95FI	     	<-Samp[grep('Sel95FI',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]            	# Survey selectivity at age
-DataParams$Sel50VB		    <-Samp[grep('Sel50VB',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]       	#  Selectivity for von Bertlanffy surveys (usually uniform above a specific age)
-DataParams$Sel95VB    	 	<-Samp[grep('Sel95VB',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]         	# Selectivity for von Bertlanffy surveys (usually uniform above a specific age)
-DataParams$SurveyF	    	<-Samp[grep('SurveyF',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	          # Fishing rate associated with survey effort
-DataParams$nAgeFD         <-Samp[grep('nAgeFD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]   # Number of fishery dependent age samples collected from each patch
-DataParams$nAgeFI         <-Samp[grep('nAgeFI',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]              # Number of fishery independent age samples collected from each patch
-DataParams$nSizeFD      	<-Samp[grep('nSizeFD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]           	  # Number of fishery dependent size samples collected from each patch
-DataParams$nSizeFI      	<-Samp[grep('nSizeFI',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	            # Number of fishery independent size samples collected from each patch
-DataParams$numVB      	 	<-Samp[grep('numVB',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	# Number of VB age-size samples collected from each patch
-DataParams$VBbins	      	<-Samp[grep('VBbins',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]            	#  Size bins associated with von Bertalanffy survey
-DataParams$lengthObsSD_FI <-Samp[grep('lengthObsSD_FI',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]              # Observation Error on fishery independent lengths
-DataParams$lengthObsSD_FD <-Samp[grep('lengthObsSD_FD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]           	  # Observation Error on fishery dependent lengths
-DataParams$AgeObsSD_FI	 	<-Samp[grep('AgeObsSD_FI',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	            # Observation Error on fishery independent ages
-DataParams$AgeObsSD_FD   	<-Samp[grep('AgeObsSD_FD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	# Observation Error on fishery dependent ages
-DataParams$FISurvType   	<-Samp[grep('FISurvType',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]            	# Spatial pattern for fishery independent surveys (0 = input a .csv file specifying custom survey distribution, 1 = sample all patches, 2=sample no patches, 3 = sample random 20% of patches, 4= sample near and far site, 5=sample MPAs)
-DataParams$FDSurvType		  <-Samp[grep('FDSurvType',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]       	# Spatial pattern for fishery dependent surveys (0 = input a .csv file specifying custom survey distribution, 1 = sample all fished patches, 2=sample no patches, 3 = sample random 20% of patches, 4= sample near and far site)
-DataParams$Catch_FD       <-Samp[grep('Catch_FD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	            # Collect fishery dependent catch data? 1 = yes, 2 = no.
-DataParams$Catch_FI   	 	<-Samp[grep('Catch_FI',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	# Collect fishery independent catch data? 1 = yes, 2 = no.
-DataParams$Effort_FI	  	<-Samp[grep('Effort_FI',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]            	# Collect fishery independent abundance index data? 1 = yes, 2 = no.
-DataParams$Effort_FD      <-Samp[grep('Effort_FD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]              # Collect fishery dependent CPUE data? 1 = yes, 2 = no.
-DataParams$Ages_FD   	    <-Samp[grep('Ages_FD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]           	  # Collect fishery dependent age composition data? 1 = yes, 2 = no.
-DataParams$Ages_FI	    	<-Samp[grep('Ages_FI',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	            # Collect fishery independent age composition data? 1 = yes, 2 = no.
-DataParams$Sizes_FD   	 	<-Samp[grep('Sizes_FD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]	# Collect fishery dependent size composition data? 1 = yes, 2 = no.
-DataParams$Sizes_FI     	<-Samp[grep('Sizes_FI',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]            	# Collect fishery independent size composition data? 1 = yes, 2 = no.
-DataParams$VBSurvey		    <-Samp[grep('VBSurvey',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]       	# Collect age and size data to estimate VB params? 1 = yes, 2 = no.
-DataParams$Survey_q       <-Samp[grep('Survey_q',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]            	# Survey catchability. Might be different depending on mode of survey (such as dive surveys)
-DataParams$sigSurvey		    <-Samp[grep('sigSurvey',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]       	# Standard deviation of observation error on total catches. If no error, sigHistCatch=0.
-
-sampleTimeSteps <- seq(DataParams$SampStartYr,simTime-burn+1,by=DataParams$SampFreq)  #Time steps in which sampling occurs
-
-## Set up data storage. Size is different when data is Aggregated.
+NoTakeZone<- NoTakeZoneNULL
 
 if(DataParams$Aggregate == 0){
   FDCatchData <- array(dim=c(simTime-burn+1, SpaceR, SpaceC, FleetN))
@@ -129,19 +70,9 @@ if(DataParams$Aggregate == 0){
   FICPUEData <- array(dim=c(simTime-burn+1))
 }
 
-PortLc<-c(PortX,PortY) #Does this get used anywhere?
-FishSel<-matrix(ncol=FleetN,nrow=kmax)
-for(y in 1:FleetN)
- FishSel[,y]<-q[y]/(1+exp(-log(19)*((seq(1,kmax)-Sel50[y])/(Sel95[y]-Sel50[y]))))
 
-#==econ pars=================================
-price		  <-as.numeric(Fleets[grep('price',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# ex-vessel price per unit harvest (kg)
-costTrv	  <-as.numeric(Fleets[grep('costTrv',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# cost to travel one patch
-costFish	<-as.numeric(Fleets[grep('costFish',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# cost per unit effort fishing
-discRate	<-as.numeric(Fleets[grep('discRate',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])	# discount rate
-TimeHor	  <-as.numeric(Fleets[grep('TimeHor',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# time horizon for evaluation
-Fishers	  <-as.numeric(Fleets[grep('Fishers',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# number of fishers
-maxCapac	<-as.numeric(Fleets[grep('maxCapac',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# max capacity of a single fisherman in a timestep (kg) (can also be a 'trip limit'/permit implementation)
+PortLc<-c(PortX,PortY) #Does this get used anywhere?
+
 
 #==dummy spatial matrix
 SpaceUse<-matrix(0,ncol=SpaceC,nrow=SpaceR)
@@ -225,10 +156,22 @@ VirSpBio<-sum(tempSpBio)
 
 for(timeStep in burn:simTime) 
     { 
-  NoTakeZone<-NoTakeZoneNULL
+#   NoTakeZone<-NoTakeZoneNULL
   if(timeStep>=initManage)
   {
-    ApplyManagement(Strat=ManagementStrats,Management=Management)
+    NewMan<- ApplyManagement(Strat=ManagementStrats,Management=Management)
+    
+    Fleets<- NewMan$Fleets
+    
+    season<- NewMan$season
+    
+    NoTakeZoneImp<- NewMan$NoTakeZoneImp
+#     ShapeFishery(Life=Life,Fleets=Fleets,SimCTL=SimCTL,NoTakeZones=NoTakeZoneNULL,Samp=Samp) #Assign fishery characteristics
+
+source('ShapeFishery.R') #Assign fishery characteristics
+
+# ShapeFishery() #Assign fishery characteristics
+    
   }
   if(sum(dim(NoTakeZone)- c(SpaceR,SpaceC))!=0)
   {
@@ -268,7 +211,8 @@ for(timeStep in burn:simTime)
 
  if(any(timeStep%%12==(which(!is.na(season[,flt+1]))-1)))
  {
-  for(f in 1:Fishers[flt])
+  show(Fishers[flt])
+   for(f in 1:Fishers[flt])
   {     
   #==find closest, highest value, fishable patch=================
   #==insert option for choosing randomly in a bivariate normal centered on the port of entry
