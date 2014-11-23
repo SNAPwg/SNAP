@@ -41,9 +41,20 @@ ApplyManagement<- function(Strat,Management,Fishery)
   
   #   Fishery$sampleTimeSteps <- seq(Fishery$DataParams$SampStartYr,simTime-burn+1,by=DataParams$SampFreq)  #Time steps in which sampling occurs
   
+  
+  AgeLimit<-  round((log(1-Fishery$SizeLimit/Fishery$Linf)/-Fishery$K)+Fishery$t0)
+  
+  
   Fishery$FishSel<-matrix(ncol=Fishery$FleetN,nrow=Fishery$kmax)
   for(y in 1:Fishery$FleetN)
+  {
     Fishery$FishSel[,y]<-Fishery$q[y]/(1+exp(-log(19)*((seq(1,Fishery$kmax)-Fishery$Sel50[y])/(Fishery$Sel95[y]-Fishery$Sel50[y]))))
+  }
   
+  if (AgeLimit>0)
+  {
+    Fishery$FishSel[1:AgeLimit,]<- 0
+  }
+#   show(Fishery$FishSel)
   return(Fishery)
 }
