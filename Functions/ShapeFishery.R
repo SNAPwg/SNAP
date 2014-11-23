@@ -70,7 +70,7 @@ ShapeFishery<- function(Life,Fleets,SimCTL,season,NoTakeZone,Samp)
   costSteep <-as.numeric(Fleets[grep('costSteep',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] )  # determines the influence of catch rate on fisher behavior
   NoTakeZone<- NoTakeZone
   season<- season
-    #==Sampling Params ==============================
+  #==Sampling Params ==============================
   DataParams <- NULL
   DataParams$histCatchFD    <-Samp[grep('histCatchFD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]              # Collect historical Catch Data?
   DataParams$histEffortFD  	<-Samp[grep('histEffortFD',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]           	  # Collect historical CPUE Data?
@@ -113,11 +113,18 @@ ShapeFishery<- function(Life,Fleets,SimCTL,season,NoTakeZone,Samp)
   
   ## Set up data storage. Size is different when data is Aggregated.
   
+  AgeLimit<-  round((log(1-SizeLimit/Linf)/-K)+t0)
   
   FishSel<-matrix(ncol=FleetN,nrow=kmax)
   for(y in 1:FleetN)
-    FishSel[,y]<-q[y]/(1+exp(-log(19)*((seq(1,kmax)-Sel50[y])/(Sel95[y]-Sel50[y]))))
-  
+  {
+    FishSel[,y]<-q[y]/(1+exp(-log(19)*((seq(1,kmax)-Sel50[y])/(Sel95[y]-Sel50[y])))) #Can we change this to be size based?
+  }
+ 
+  if (AgeLimit>0)
+  {
+    FishSel[1:AgeLimit,]<- 0
+  }
   #==econ pars=================================
   price		  <-as.numeric(Fleets[grep('price',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# ex-vessel price per unit harvest (kg)
   costTrv	  <-as.numeric(Fleets[grep('costTrv',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# cost to travel one patch
