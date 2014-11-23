@@ -399,7 +399,7 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
   
   list(CatchByFisher=CatchByFisher,CostByFisher=CostByFisher,ProfitByFisher=ProfitByFisher,CostOfManagement=CostOfManagement,
        SpawningBiomass=SpawningBiomass,SpaceEffort=SpaceEffort,InsideMPAspbio=InsideMPAspbio,OutsideMPAspbio=OutsideMPAspbio,
-       ExploitableNumbers=NumbersExplt,Fishery=Fishery)
+       ExploitableNumbers=NumbersExplt,Fishery=ManagedFishery)
 }
 
 
