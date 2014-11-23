@@ -1,40 +1,49 @@
-ApplyManagement<- function(Strat,Management)
+ApplyManagement<- function(Strat,Management,Fishery)
 {
-      
+  
   if (Strat$SizeLimit==1)
-  {
-    Fleets[grep('SizeLimit',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]<- Management$SizeLimit
+  { 
+    Fishery$SizeLimit<-  Management$SizeLimit 
   }
   
   if (Strat$NTZ==1)
   {
-    NoTakeZoneImp<- Management$NTZ
+    #     NoTakeZoneImp<- Management$NTZ
+    Fishery$NoTakeZone<- Management$NTZ
   }
-
+  
   
   if (Strat$Season==1)
   {
-    season<- Management$Season
+    Fishery$season<- Management$Season
   }
-
+  
   if (Strat$Effort==1)
   {
-    Fleets[grep('Fishers',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]<- Management$Effort
+    Fishery$Fishers<- Management$Effort
     
   }
-
+  
   if (Strat$Gear==1)
   {
-    Fleets[grep('q',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]<- Management$Gear
+    Fishery$q<- Management$Gear
     
   }
-
+  
   if (Strat$Tax==1)
   {
-    Fleets[grep('costFish',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)]<- Fleets[grep('costFish',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] * Management$Tax
+    Fishery$costFish<- Fleets[grep('costFish',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] * Management$Tax
     
   }
   
+  Fishery$FleetN<-ncol(Fleets)-1
   
-  return(list(Fleets=Fleets,season=season,NoTakeZoneImp=NoTakeZoneImp))
+  
+  #   Fishery$sampleTimeSteps <- seq(Fishery$DataParams$SampStartYr,simTime-burn+1,by=DataParams$SampFreq)  #Time steps in which sampling occurs
+  
+  Fishery$FishSel<-matrix(ncol=Fishery$FleetN,nrow=Fishery$kmax)
+  for(y in 1:Fishery$FleetN)
+    Fishery$FishSel[,y]<-Fishery$q[y]/(1+exp(-log(19)*((seq(1,Fishery$kmax)-Fishery$Sel50[y])/(Fishery$Sel95[y]-Fishery$Sel50[y]))))
+  
+  return(Fishery)
 }
