@@ -83,32 +83,58 @@ Management$Tax<- 1.1
 
 
 # Run Tradeoffs -----------------------------------------------------------
-DefaultFish<- Life
-DefaultFleet<- Fleets
 
 ManageSims<- list()
 
+ManageResults<-as.data.frame(matrix(NA,nrow=dim(ManageStrats)[1],ncol=6))
+
+colnames(ManageResults) <- c('ManagementPlan','Catch','FishingCost','FishingProfit','ManagementCost','SpawningBiomass')
+
 for (i in 1:dim(ManageStrats)[1]) #Can replace this with mclapply later if this takes too long, easier to debug this way
 {
-
+  show(paste(round(100*(i/dim(ManageStrats)[1])),'% done with management iterations',sep=''))
   
-ManageSims[[i]]<-Master(Life,SimCTL,Fleets,season,Samp,ManageStrats[i,],Management,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
-
-ManageSims[[i]]$CostOfManagement
-
-OAtotCatch<-apply(ManageSims[[i]]$CatchByFisher,2,sum,na.rm=T)
-
-Life<- DefaultFish
-
-Fleets<- DefaultFleet
-
+  ManageSims[[i]]<-Master(Life,SimCTL,Fleets,season,Samp,ManageStrats[i,],Management,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
+  
+  ManageResults$ManagementPlan[i]<- as.character(ManageStrats$Plan[i] )
+  
+  ManageResults$Catch[i] <- sum(ManageSims[[i]]$CatchByFisher,na.rm=T)
+  
+  ManageResults$FishingCost[i] <- sum(ManageSims[[i]]$CostByFisher,na.rm=T)
+  
+  ManageResults$FishingProfit[i] <- sum(ManageSims[[i]]$ProfitByFisher,na.rm=T)
+  
+  ManageResults$ManagementCost[i] <- sum(ManageSims[[i]]$CostOfManagement,na.rm=T)
+  
+  BioPath<- (ManageSims[[i]]$SpawningBiomass)
+  
+  ManageResults$SpawningBiomass[i] <- BioPath[length(BioPath)]
+  
 }
 
-M<- (ManageSims[[1]]$CatchByFisher)[,,1]
 
-M<- as.matrix(M)
+pdf(file=paste(FigureFolder,'Profit and Biomass Tradeoff.pdf',sep='/'),width=8,height=6)
+  print(ggplot(ManageResults,aes(FishingProfit,SpawningBiomass)) +
+  geom_point(aes(color=ManagementPlan),size=10)+
+  xlab('Cumulative Fishing Profits')+
+  ylab('Final Spawning Biomass'))
+dev.off()
 
-Test(2)
-# Define life history uncertainty
+
+pdf(file=paste(FigureFolder,'Economic Upside Plot.pdf',sep=''),height=10,width=14,pointsize=6)
+print(ggplot(PlotData,aes(xVar,yVar,size=Size)) +
+        geom_point(aes(color=Country)) +
+        #   guides(color=FALSE) +
+        coord_cartesian(xlim=c(-30,Limit),ylim=c(-30,Limit)) +
+        scale_size_continuous(range=c(6,12), 
+                              breaks=c(25,50,75,100), 
+                              labels=c("25%", "50%",'75%','100+%')) +
+        theme(text=element_text(size=20)) +
+        geom_abline(intercept=0,slope=0) +
+        geom_vline(xintercept=0) +
+        labs(title=paste(Policy,"Upside Percentages",sep=" "), x = "Percent Change from Current Biomass",
+             y = "Percent Change from SQ NPV",size="% Change\n SQ Food"))
+dev.off()
+
 
 
