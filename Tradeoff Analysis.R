@@ -11,6 +11,7 @@ library(caTools)
 library(plyr)
 library(ggplot2)
 library(lattice)
+library(ggthemes)
 source("lenwei.R")
 source("VisualizeMovement.R")
 source("movArray.R")
@@ -67,7 +68,7 @@ setwd(OriginalWorkingDir)
 
 Management<- NULL
 
-Management$SizeLimit<- 90
+Management$SizeLimit<- 181
 
 Management$NTZ<- NoTakeZoneImp
 
@@ -112,29 +113,26 @@ for (i in 1:dim(ManageStrats)[1]) #Can replace this with mclapply later if this 
   
 }
 
+m<- ManageSims[[2]]
 
 pdf(file=paste(FigureFolder,'Profit and Biomass Tradeoff.pdf',sep='/'),width=8,height=6)
-  print(ggplot(ManageResults,aes(FishingProfit,SpawningBiomass)) +
-  geom_point(aes(color=ManagementPlan),size=10)+
-  xlab('Cumulative Fishing Profits')+
-  ylab('Final Spawning Biomass'))
+print(ggplot(ManageResults,aes(FishingProfit,SpawningBiomass,size=ManagementCost)) +
+        #   geom_point(aes(shape=ManagementPlan,color=ManagementCost),size=5)+
+        geom_point(aes(color=ManagementPlan,size=ManagementCost),size=5)+
+        xlab('Cumulative Fishing Profits')+
+        ylab('Final Spawning Biomass'))
+#   theme_economist()+scale_colour_economist())
 dev.off()
 
 
-pdf(file=paste(FigureFolder,'Economic Upside Plot.pdf',sep=''),height=10,width=14,pointsize=6)
-print(ggplot(PlotData,aes(xVar,yVar,size=Size)) +
-        geom_point(aes(color=Country)) +
-        #   guides(color=FALSE) +
-        coord_cartesian(xlim=c(-30,Limit),ylim=c(-30,Limit)) +
-        scale_size_continuous(range=c(6,12), 
-                              breaks=c(25,50,75,100), 
-                              labels=c("25%", "50%",'75%','100+%')) +
-        theme(text=element_text(size=20)) +
-        geom_abline(intercept=0,slope=0) +
-        geom_vline(xintercept=0) +
-        labs(title=paste(Policy,"Upside Percentages",sep=" "), x = "Percent Change from Current Biomass",
-             y = "Percent Change from SQ NPV",size="% Change\n SQ Food"))
-dev.off()
+# pdf(file=paste(FigureFolder,'Profit and Biomass Tradeoff Panel.pdf',sep='/'),width=8,height=6)
+# print(ggplot(ManageResults,aes(FishingProfit,SpawningBiomass)) +
+#         geom_point(aes(color=ManagementCost),size=10)+
+#        facet_wrap(~ManagementPlan)+
+#         xlab('Cumulative Fishing Profits')+
+#         ylab('Final Spawning Biomass'))
+# dev.off()
 
 
+# ggplot(nmmaps, aes(date,temp))+geom_point(color="chartreuse4")+ facet_wrap(~year, ncol=2)
 
