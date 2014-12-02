@@ -29,7 +29,7 @@ Site<- 'Belize'
 
 Species<- 'Lobster'
 
-RunName<- 'Stochastic Test Run'
+RunName<- 'Stochastic Test Run 2'
 
 
 Fishery<- paste(Site,Species)
@@ -70,7 +70,7 @@ setwd(OriginalWorkingDir)
 
 Management<- NULL
 
-Management$SizeLimit<- 85
+Management$SizeLimit<- 65
 
 Management$NTZ<- NoTakeZoneImp
 
@@ -110,11 +110,11 @@ for (i in 1:dim(ManageStrats)[1]) #Can replace this with mclapply later if this 
   
 }
 
-TimeLength<- dim(ManageSims[[1]][[1]]$CatchByFisher)[2]
+TimeLength<- dim(ManageSims[[1]][[1]]$CatchByFisher)[2] #time run for fishing scenarios
 
-SimLength<- SimCTL[grep('simTime',SimCTL[,2]),1]
+SimLength<- SimCTL[grep('simTime',SimCTL[,2]),1] #Complete time with burn in
 
-BurnIn<- SimCTL[grep('burn',SimCTL[,2]),1]
+BurnIn<- SimCTL[grep('burn',SimCTL[,2]),1] #Burn in period
 
 
 
@@ -210,20 +210,20 @@ dev.off()
 
 pdf(file=paste(FigureFolder,'TimeTrend.pdf',sep='/'),width=8,height=6)
 
-ProfitTrend=(ggplot(subset(MSE_ByYear,Year<=22),aes(Year,Profits))+
+ProfitTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,Profits))+
                geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
                xlab('Year')+
                ylab('Profits')
              +theme(legend.position="none"))
 
-CostsTrend=(ggplot(subset(MSE_ByYear,Year<=22),aes(Year,ManagementCosts))+
+CostsTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,ManagementCosts))+
               geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
               xlab('Year')+
               ylab('Management Costs')
             +theme(legend.position="none"))
 
 
-SSBTrend=(ggplot(subset(MSE_ByYear,Year<=22),aes(Year,SSB))+
+SSBTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,SSB))+
             geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
             xlab('Year')+
             ylab('SSB') )
