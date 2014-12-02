@@ -19,6 +19,11 @@ ShapeFishery<- function(Life,Fleets,SimCTL,season,NoTakeZone,Samp)
   mat95		<-Life[grep('mat95',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # age at 95% maturity 
   lenSD   <-Life[grep('lenSD',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # standard deviation of length at age
   
+  if (mat95<=mat50)
+  {
+    mat95<- 1.1*mat50
+  }
+  
   #==recruitment================================
   detRec  <-Life[grep('detRec',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]        	    # deterministic recruitment?
   R0	  	<-Life[grep('R0',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             		# Virgin recruitment
