@@ -26,7 +26,9 @@ ApplyManagement<- function(Strat,Management,Fishery)
   
   if (Strat$Gear==1)
   {
-    Fishery$q<- Management$Gear
+    Fishery$Sel50<- Fishery$Sel50*Management$Gear
+    
+    #     Fishery$Sel50<- Fishery$Sel50*Management$Gear
     
   }
   
@@ -44,6 +46,11 @@ ApplyManagement<- function(Strat,Management,Fishery)
   
   AgeLimit<-  round((log(1-Fishery$SizeLimit/Fishery$Linf)/-Fishery$K)+Fishery$t0)
   
+  if (Fishery$Sel95<=Fishery$Sel50)
+  {
+    Fishery$Sel95<- 1.01*Fishery$Sel50
+  }
+  
   
   Fishery$FishSel<-matrix(ncol=Fishery$FleetN,nrow=Fishery$kmax)
   for(y in 1:Fishery$FleetN)
@@ -55,6 +62,6 @@ ApplyManagement<- function(Strat,Management,Fishery)
   {
     Fishery$FishSel[1:AgeLimit,]<- 0
   }
-#   show(Fishery$FishSel)
+  #   show(Fishery$FishSel)
   return(Fishery)
 }

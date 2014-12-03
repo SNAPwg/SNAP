@@ -86,7 +86,7 @@ Management$Quota<- 10000
 
 Management$Effort<- 12
 
-Management$Gear<- 0.75
+Management$Gear<- 1.25
 
 Management$Tax<- 1.3
 
