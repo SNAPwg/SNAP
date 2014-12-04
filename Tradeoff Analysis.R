@@ -25,11 +25,11 @@ source("samplingFunc.R")
 # Storage Settings --------------------------------------------------------
 
 
-Site<- 'Belize'
+Site<- 'Peru'
 
-Species<- 'Lobster'
+Species<- 'Lorna Drum'
 
-RunName<- 'Stochastic Test Run 2'
+RunName<- 'Test MSE'
 
 
 Fishery<- paste(Site,Species)
@@ -56,13 +56,13 @@ OriginalWorkingDir<- getwd()
 setwd(FisheryPlace)
 
 Life<-read.csv("LifeHistory.csv")                 # life history characteristics
-SimCTL<-read.csv("GrandSimCtlBLZ.csv",header=F)               # simulation controls
+SimCTL<-read.csv("GrandSimCtlPeru.csv",header=F)               # simulation controls
 Fleets<-read.csv("Fleets.csv",header=F)                   # fleet characteristics  
 season<-read.csv("season.csv",header=F)           # fishing seasons by fleet
 Samp <- read.csv("SamplingParams.csv")            # sampling controls for management
-NoTakeZoneNULL<-read.csv("notakezoneBLZNULL.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
-NoTakeZoneImp<-read.csv("notakezoneBLZ.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
-habitat<-read.csv("habitatBLZ.csv",header=F)       
+NoTakeZoneNULL<-read.csv("notakezonePeruNULL.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
+NoTakeZoneImp<-read.csv("notakezonePeru.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
+habitat<-read.csv("habitatPeru.csv",header=F)       
 ManageStrats<- read.csv('ManagementStrategies.csv')
 setwd(OriginalWorkingDir)
 
@@ -70,7 +70,7 @@ setwd(OriginalWorkingDir)
 
 Management<- NULL
 
-Management$SizeLimit<- 65
+Management$SizeLimit<- 330
 
 Management$NTZ<- NoTakeZoneImp
 
@@ -78,15 +78,15 @@ shortseason<- season
 
 shortseason[,2]<- NA
 
-shortseason[1:4,2]<- 1 
+shortseason[1:9,2]<- 1 
 
 Management$Season<- shortseason
 
 Management$Quota<- 10000
 
-Management$Effort<- 12
+Management$Effort<- 30
 
-Management$Gear<- 1.25
+Management$Gear<- 1.5
 
 Management$Tax<- 1.3
 
@@ -102,7 +102,7 @@ colnames(ManageResults) <- c('ManagementPlan','Catch','FishingCost','FishingProf
 for (i in 1:dim(ManageStrats)[1]) #Can replace this with mclapply later if this takes too long, easier to debug this way
 {
   
-  ManageSims[[i]]<-Master(Life,SimCTL,Fleets,season,Samp,ManageStrats[i,],Management,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
+  ManageSims[[i]]<-Master(Life,SimCTL,Fleets,season,Samp,ManageStrats[i,],Management,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=T)
   
   #   Test<-Master(Life,SimCTL,Fleets,season,Samp,ManageStrats[i,],Management,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
   
@@ -115,7 +115,6 @@ TimeLength<- dim(ManageSims[[1]][[1]]$CatchByFisher)[2] #time run for fishing sc
 SimLength<- SimCTL[grep('simTime',SimCTL[,2]),1] #Complete time with burn in
 
 BurnIn<- SimCTL[grep('burn',SimCTL[,2]),1] #Burn in period
-
 
 
 MSE <- ldply(ManageSims, function(mod) 
@@ -131,6 +130,7 @@ MSE <- ldply(ManageSims, function(mod)
                (mod2$CostOfManagement[BurnIn:SimLength]),
                mod2$SpawningBiomass[BurnIn:SimLength],
                rep(mod2$Fishery$mat50,TimeLength),
+               rep(mod2$Fishery$VirSpBio,TimeLength),
                rep(sum(mod2$CostOfManagement[BurnIn:SimLength],na.rm=T),TimeLength)
     )
   } 
@@ -138,7 +138,7 @@ MSE <- ldply(ManageSims, function(mod)
 })
 
 colnames(MSE)<- c('ManagementPlan','Iteration','TimeStep','Catch','Profits','FishingCosts',
-                  'ManagementCosts','SpawningBiomass','mat50','TotalManagementCosts')
+                  'ManagementCosts','SpawningBiomass','mat50','VirginSpawningBiomass','TotalManagementCosts')
 
 MSE$ManagementCosts[is.na(MSE$ManagementCosts)]<- 0
 
@@ -155,12 +155,11 @@ MSE_ByMonth<- ddply(MSE,c('ManagementPlan','TimeStep'),summarize,Costs=mean(Mana
                     NPV=mean(Profits*(1+0.05)^-TimeStep),SSB=mean(SpawningBiomass))
 
 MSE_ByYear<- ddply(MSE,c('ManagementPlan','Iteration','Year'),summarize,ManagementCosts=sum(ManagementCosts,na.rm=T),Profits=sum(Profits,na.rm=T),
-                   PV=sum(Profits*(1+0.05)^-TimeStep),SSB=mean(SpawningBiomass))
+                   PV=sum(Profits*(1+0.05)^-TimeStep),SSB=mean(SpawningBiomass),Depletion=mean(SpawningBiomass)/mean(VirginSpawningBiomass),Catch=sum(Catch,na.rm=T))
 
 
 MSE_ByYear<- ddply(MSE_ByYear,c('ManagementPlan','Year'),summarize,ManagementCosts=mean(ManagementCosts,na.rm=T),Profits=mean(Profits,na.rm=T),
-                   PV=mean(PV),SSB=mean(SSB))
-
+                   PV=mean(PV),SSB=mean(SSB)*1e-6,Depletion=mean(Depletion),Catch=mean(Catch)*1e-6)
 
 pdf(file=paste(FigureFolder,'Final Profit and Final Biomass Tradeoff No Cost.pdf',sep='/'),width=8,height=6)
 print(ggplot(subset(MSE,TimeStep==max(TimeStep)),aes(Profits,SpawningBiomass))+
@@ -210,6 +209,13 @@ dev.off()
 
 pdf(file=paste(FigureFolder,'TimeTrend.pdf',sep='/'),width=8,height=6)
 
+
+CatchTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,Catch))+
+               geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
+               xlab('Year')+
+               ylab('Catch (MT)')
+             +theme(legend.position="none"))
+
 ProfitTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,Profits))+
                geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
                xlab('Year')+
@@ -226,9 +232,14 @@ CostsTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,ManagementCo
 SSBTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,SSB))+
             geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
             xlab('Year')+
-            ylab('SSB') )
+            ylab('SSB (MT)') )
 
-print(grid.arrange(ProfitTrend,CostsTrend,SSBTrend,ncol=2))
+DepletionTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,Depletion))+
+                  geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
+                  xlab('Year')+
+                  ylab('SSB / Virgin SSB') )
+
+print(grid.arrange(CatchTrend,ProfitTrend,CostsTrend,SSBTrend,DepletionTrend,ncol=2))
 dev.off()
 
 
