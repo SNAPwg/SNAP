@@ -155,11 +155,17 @@ MSE_ByYear<- ddply(MSE_ByYear,c('ManagementPlan','Year'),summarize,ManagementCos
 
 pdf(file=paste(FigureFolder,'Tuning TimeTrend.pdf',sep='/'),width=8,height=6)
 
+ProfitTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,Profits))+
+              geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
+              xlab('Year')+
+              ylab('Profit')
+            +theme(legend.position="none"))
+
 CatchTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,Catch))+
-               geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
-               xlab('Year')+
-               ylab('Catch')
-             +theme(legend.position="none"))
+              geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
+              xlab('Year')+
+              ylab('Catch (MT)')
+            +theme(legend.position="none"))
 
 CostsTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,ManagementCosts))+
               geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
@@ -172,19 +178,19 @@ SSBTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,SSB))+
             geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
             xlab('Year')+
             ylab('SSB')
-            +theme(legend.position="none"))
+          +theme(legend.position="none"))
 
 
 
 DepletionTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,Depletion))+
-            geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
-            xlab('Year')+
-            ylab('SSB / Virgin SSB') )
+                  geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
+                  xlab('Year')+
+                  ylab('SSB / Virgin SSB') )
 
-print(grid.arrange(CatchTrend,CostsTrend,SSBTrend,DepletionTrend,ncol=2))
+print(grid.arrange(CatchTrend,ProfitTrend,SSBTrend,DepletionTrend,ncol=2))
 dev.off()
 
 
-  save.image(file=paste(ResultFolder,'/FinalResults.rdata',sep=''))
+save.image(file=paste(ResultFolder,'/FinalResults.rdata',sep=''))
 
 
