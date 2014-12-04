@@ -150,56 +150,10 @@ MSE_ByYear<- ddply(MSE,c('ManagementPlan','Iteration','Year'),summarize,Manageme
 
 
 MSE_ByYear<- ddply(MSE_ByYear,c('ManagementPlan','Year'),summarize,ManagementCosts=mean(ManagementCosts,na.rm=T),Profits=mean(Profits,na.rm=T),
-                   PV=mean(PV),SSB=mean(SSB),Depletion=mean(Depletion),Catch=mean(Catch))
+                   PV=mean(PV),SSB=mean(SSB),Depletion=mean(Depletion),Catch=mean(Catch)*1e-6)
 
 
-pdf(file=paste(FigureFolder,'Final Profit and Final Biomass Tradeoff No Cost.pdf',sep='/'),width=8,height=6)
-print(ggplot(subset(MSE,TimeStep==max(TimeStep)),aes(Profits,SpawningBiomass))+
-        geom_point(aes(color=ManagementPlan),size=10,alpha=0.6)+
-        scale_size_continuous(range = c(5, 15))+
-        xlab('Final Fishing Profits')+
-        ylab('Final Spawning Biomass'))
-dev.off()
-
-
-pdf(file=paste(FigureFolder,'Final Profit and Final Biomass Tradeoff.pdf',sep='/'),width=8,height=6)
-print(ggplot(subset(MSE,TimeStep==max(TimeStep)),aes(Profits,SpawningBiomass))+
-        geom_point(aes(color=ManagementPlan,size=TotalManagementCosts),alpha=0.6)+
-        scale_size_continuous(range = c(5, 15))+
-        xlab('Final Fishing Profits')+
-        ylab('Final Spawning Biomass'))
-dev.off()
-
-pdf(file=paste(FigureFolder,'Cumulative Tradeoffs.pdf',sep='/'),width=8,height=6)
-print(ggplot(MSE_Totals,aes(TotalProfits,FinalSSB))+
-        geom_point(aes(color=ManagementPlan),size=10,alpha=0.6)+
-        xlab('Cumulative Fishing Profits')+
-        ylab('Final Spawning Biomass'))
-dev.off()
-
-
-pdf(file=paste(FigureFolder,'Cumulative Tradeoffs 2.pdf',sep='/'),width=8,height=6)
-print(ggplot(MSE_Totals,aes(TotalProfits,FinalSSB))+
-        geom_point(aes(color=ManagementPlan,size=TotalManagementCosts),alpha=0.6)+
-        xlab('Cumulative Fishing Profits')+
-        ylab('Final Spawning Biomass')+
-        scale_size_continuous(range = c(5, 15)))
-
-
-dev.off()
-
-
-pdf(file=paste(FigureFolder,'Cumulative Tradeoffs 3.pdf',sep='/'),width=8,height=6)
-print(ggplot(MSE_Totals,aes(NPV,FinalSSB))+
-        geom_point(aes(color=ManagementPlan,size=TotalManagementCosts),alpha=0.6)+
-        xlab('Net Present Fishing Profits')+
-        ylab('Final Spawning Biomass')+
-        scale_size_continuous(range = c(5, 15)))
-
-
-dev.off()
-
-pdf(file=paste(FigureFolder,'TimeTrend.pdf',sep='/'),width=8,height=6)
+pdf(file=paste(FigureFolder,'Tuning TimeTrend.pdf',sep='/'),width=8,height=6)
 
 CatchTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,Catch))+
                geom_line(aes(color=ManagementPlan),size=1,alpha=0.6)+
@@ -230,14 +184,6 @@ DepletionTrend=(ggplot(subset(MSE_ByYear,Year<= (max(Year)-1)),aes(Year,Depletio
 print(grid.arrange(CatchTrend,CostsTrend,SSBTrend,DepletionTrend,ncol=2))
 dev.off()
 
-
-pdf(file=paste(FigureFolder,'Profit SSB Phase Space.pdf',sep='/'),width=8,height=6)
-
-print(ggplot(subset(MSE_ByYear,Year<=22),aes(SSB,Profits))+
-        geom_line(aes(color=Year),size=1,alpha=1)+
-        xlab('SSB')+
-        ylab('Profits')+facet_wrap(~ManagementPlan))
-dev.off()
 
   save.image(file=paste(ResultFolder,'/FinalResults.rdata',sep=''))
 
