@@ -36,6 +36,7 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
     
     Fishery<- ShapeFishery(Life,Fleets,SimCTL,season,NoTakeZoneNULL,Samp)
         
+    
     Fishery$ManagementPlan<- ManageStrats$Plan
 
     Fishery$Iteration<- s
@@ -47,6 +48,7 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
       eval(parse(text=paste(Things[t],'<- ','Fishery$',Things[t],sep='')))
     }
     
+        
     if(DataParams$Aggregate == 0){
       FDCatchData <- array(dim=c(simTime-burn+1, SpaceR, SpaceC, FleetN))
       FDCPUEData <- array(dim=c(simTime-burn+1, SpaceR, SpaceC, FleetN))
@@ -73,6 +75,7 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
     if(PrintLifeHistory==T)
     {
       #==print out maturity, selectivity, growth, etc.
+      pdf(file=paste(FigureFolder,'/LifeHistory ',ManageStrats$Plan,' Iteration ',s,'.pdf',sep=''))
       par(mfrow=c(2,1),mar=c(0.1,4,.1,4),oma=c(4,0,0,0))
       plot(MatAge,type="l",xaxt='n',las=2,ylab='')
       mtext(side=2,"Probability",line=3)
@@ -94,6 +97,7 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
       mtext(side=3,"Habitat quality")
       filled.contour(matrix(as.numeric(unlist(NoTakeZone)),ncol=SpaceC),x=seq(1,SpaceR),y=seq(1,SpaceC)) 
       mtext(side=3,"No take zones (0)")
+      dev.off()
     }
     
     #===========================================================
@@ -134,8 +138,9 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
     tempSpBio<-rep(0,kmax)
     for(i in 1:kmax)
       tempSpBio[i]<-sum(SpaceNumAtAgeT[burn,,,i]*MatAge[i]*wgtAtAge[i])
+   
     VirSpBio<-sum(tempSpBio)
-    
+    Fishery$VirSpBio<- VirSpBio
     
     #==relate the cost of fishing to the number of fish in a patch?? (e.g. density is low == must fish harder)
     
@@ -153,15 +158,14 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
       if(timeStep>=initManage)
       {
         
-        ManagedFishery<- ApplyManagement(Strat=ManageStrats,Management=Management,Fishery=Fishery)
+        Fishery<- ApplyManagement(Strat=ManageStrats,Management=Management,Fishery=Fishery)
         
-        Things<- names(ManagedFishery)
+        Things<- names(Fishery)
         
         for (t in 1:length(Things))
         {
-          eval(parse(text=paste(Things[t],'<- ','ManagedFishery$',Things[t],sep='')))
+          eval(parse(text=paste(Things[t],'<- ','Fishery$',Things[t],sep='')))
         }
-        
         
       }
       if(sum(dim(NoTakeZone)- c(SpaceR,SpaceC))!=0)
@@ -437,7 +441,7 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
     
     Results[[s]]<- (list(CatchByFisher=CatchByFisher,CostByFisher=CostByFisher,ProfitByFisher=ProfitByFisher,CostOfManagement=CostOfManagement,
                          SpawningBiomass=SpawningBiomass,SpaceEffort=SpaceEffort,InsideMPAspbio=InsideMPAspbio,OutsideMPAspbio=OutsideMPAspbio,
-                         ExploitableNumbers=NumbersExplt,Fishery=ManagedFishery))
+                         ExploitableNumbers=NumbersExplt,Fishery=Fishery))
   } #Clost stochasticity loop
   return(Results)
 }

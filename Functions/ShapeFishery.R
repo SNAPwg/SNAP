@@ -125,7 +125,6 @@ ShapeFishery<- function(Life,Fleets,SimCTL,season,NoTakeZone,Samp)
   {
     FishSel[,y]<-q[y]/(1+exp(-log(19)*((seq(1,kmax)-Sel50[y])/(Sel95[y]-Sel50[y])))) #Can we change this to be size based?
   }
- 
   if (AgeLimit>0)
   {
     FishSel[1:AgeLimit,]<- 0
