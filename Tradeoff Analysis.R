@@ -84,9 +84,11 @@ Management$Season<- shortseason
 
 Management$Quota<- 10000
 
-Management$Effort<- 30
+Management$VesselBuyback<- 30
 
 Management$Gear<- 1.5
+
+Management$Capacity<- c(1.1,0.6) #increase in price and decrease in capacity 
 
 Management$Tax<- 1.3
 
@@ -114,8 +116,11 @@ TimeLength<- dim(ManageSims[[1]][[1]]$CatchByFisher)[2] #time run for fishing sc
 
 SimLength<- SimCTL[grep('simTime',SimCTL[,2]),1] #Complete time with burn in
 
+ManagementYear<- SimCTL[grep('initManage',SimCTL[,2]),1] #Complete time with burn in
+
 BurnIn<- SimCTL[grep('burn',SimCTL[,2]),1] #Burn in period
 
+Disc<- 0
 
 MSE <- ldply(ManageSims, function(mod) 
 {
@@ -144,68 +149,62 @@ MSE$ManagementCosts[is.na(MSE$ManagementCosts)]<- 0
 
 MSE$Year<- floor(MSE$TimeStep/12)
 
+MSE<- subset(MSE,TimeStep>=ManagementYear-BurnIn)
 
 MSE$RunName<- paste(MSE$ManagementPlan,MSE$Iteration,sep='-')
 
 MSE_Totals<- ddply(MSE,c('ManagementPlan','Iteration'),summarize,TotalManagementCosts=sum(ManagementCosts,na.rm=T),TotalProfits=sum(Profits,na.rm=T),
-                   NPV=sum(Profits*(1+0.05)^-TimeStep),FinalSSB=mean(SpawningBiomass[Year==max(Year)]),FinalProfits=Profits[TimeStep==max(TimeStep)])
+                   NPV=sum(Profits*(1+Disc)^-TimeStep),FinalSSB=mean(SpawningBiomass[Year==max(Year)]),FinalProfits=Profits[TimeStep==max(TimeStep)])
 
 
 MSE_ByMonth<- ddply(MSE,c('ManagementPlan','TimeStep'),summarize,Costs=mean(ManagementCosts,na.rm=T),Profits=mean(Profits,na.rm=T),
-                    NPV=mean(Profits*(1+0.05)^-TimeStep),SSB=mean(SpawningBiomass))
+                    NPV=mean(Profits*(1+Disc)^-TimeStep),SSB=mean(SpawningBiomass))
 
 MSE_ByYear<- ddply(MSE,c('ManagementPlan','Iteration','Year'),summarize,ManagementCosts=sum(ManagementCosts,na.rm=T),Profits=sum(Profits,na.rm=T),
-                   PV=sum(Profits*(1+0.05)^-TimeStep),SSB=mean(SpawningBiomass),Depletion=mean(SpawningBiomass)/mean(VirginSpawningBiomass),Catch=sum(Catch,na.rm=T))
+                   PV=sum(Profits*(1+Disc)^-TimeStep),SSB=mean(SpawningBiomass),Depletion=mean(SpawningBiomass)/mean(VirginSpawningBiomass),Catch=sum(Catch,na.rm=T))
 
 
 MSE_ByYear<- ddply(MSE_ByYear,c('ManagementPlan','Year'),summarize,ManagementCosts=mean(ManagementCosts,na.rm=T),Profits=mean(Profits,na.rm=T),
                    PV=mean(PV),SSB=mean(SSB)*1e-6,Depletion=mean(Depletion),Catch=mean(Catch)*1e-6)
 
-pdf(file=paste(FigureFolder,'Final Profit and Final Biomass Tradeoff No Cost.pdf',sep='/'),width=8,height=6)
-print(ggplot(subset(MSE,TimeStep==max(TimeStep)),aes(Profits,SpawningBiomass))+
-        geom_point(aes(color=ManagementPlan),size=10,alpha=0.6)+
-        scale_size_continuous(range = c(5, 15))+
-        xlab('Final Fishing Profits')+
-        ylab('Final Spawning Biomass'))
-dev.off()
 
 
 pdf(file=paste(FigureFolder,'Final Profit and Final Biomass Tradeoff.pdf',sep='/'),width=8,height=6)
-print(ggplot(subset(MSE,TimeStep==max(TimeStep)),aes(Profits,SpawningBiomass))+
-        geom_point(aes(color=ManagementPlan,size=TotalManagementCosts),alpha=0.6)+
+print(ggplot(subset(MSE_ByYear,Year==max(Year)-1),aes(Profits,SSB))+
+        geom_point(aes(color=ManagementPlan,size=ManagementCosts),alpha=0.6)+
         scale_size_continuous(range = c(5, 15))+
         xlab('Final Fishing Profits')+
         ylab('Final Spawning Biomass'))
 dev.off()
 
-pdf(file=paste(FigureFolder,'Cumulative Tradeoffs.pdf',sep='/'),width=8,height=6)
-print(ggplot(MSE_Totals,aes(TotalProfits,FinalSSB))+
+
+pdf(file=paste(FigureFolder,'Final Profit and Final Biomass Tradeoff No Cost.pdf',sep='/'),width=8,height=6)
+print(ggplot(subset(MSE_ByYear,Year==max(Year)-1),aes(Profits,SSB))+
         geom_point(aes(color=ManagementPlan),size=10,alpha=0.6)+
-        xlab('Cumulative Fishing Profits')+
+#         scale_size_continuous(range = c(5, 15))+
+        xlab('Final Fishing Profits')+
         ylab('Final Spawning Biomass'))
 dev.off()
 
 
-pdf(file=paste(FigureFolder,'Cumulative Tradeoffs 2.pdf',sep='/'),width=8,height=6)
-print(ggplot(MSE_Totals,aes(TotalProfits,FinalSSB))+
-        geom_point(aes(color=ManagementPlan,size=TotalManagementCosts),alpha=0.6)+
-        xlab('Cumulative Fishing Profits')+
-        ylab('Final Spawning Biomass')+
-        scale_size_continuous(range = c(5, 15)))
 
-
-dev.off()
-
-
-pdf(file=paste(FigureFolder,'Cumulative Tradeoffs 3.pdf',sep='/'),width=8,height=6)
+pdf(file=paste(FigureFolder,'Cumulative Biomass and Profit Tradeoffs.pdf',sep='/'),width=8,height=6)
 print(ggplot(MSE_Totals,aes(NPV,FinalSSB))+
         geom_point(aes(color=ManagementPlan,size=TotalManagementCosts),alpha=0.6)+
-        xlab('Net Present Fishing Profits')+
+        xlab('Net Fishing Profits')+
         ylab('Final Spawning Biomass')+
         scale_size_continuous(range = c(5, 15)))
-
-
 dev.off()
+
+
+pdf(file=paste(FigureFolder,'Cumulative Profit and Cost Tradeoffs.pdf',sep='/'),width=8,height=6)
+print(ggplot(MSE_Totals,aes(NPV,TotalManagementCosts))+
+        geom_point(aes(color=ManagementPlan),size=10,alpha=0.6)+
+        xlab('Net Fishing Profits')+
+        ylab('Net Management Costs')+
+        scale_size_continuous(range = c(5, 15)))
+dev.off()
+
 
 pdf(file=paste(FigureFolder,'TimeTrend.pdf',sep='/'),width=8,height=6)
 

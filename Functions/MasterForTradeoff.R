@@ -413,28 +413,30 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
       
       #==costs of management
       
-      if(sum(1-NoTakeZone)>1 & timeStep==initManage)
-        CostOfManagement[timeStep]<- CostOfManagement[timeStep] + MPAsunk
+      CostOfManagement[timeStep]<- CalculateManagementCosts(Fishery,timeStep,initManage,ManageStrats,Management)
       
-      if((SizeLimit[flt]>0)& timeStep==initManage)
-        CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeSunk
+#       if(sum(1-NoTakeZone)>1 & timeStep==initManage)
+#         CostOfManagement[timeStep]<- CostOfManagement[timeStep] + MPAsunk
+#       
+#       if((SizeLimit[flt]>0)& timeStep==initManage)
+#         CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeSunk
       
       #==if there are any months in which fishing is not allowed, add sunk costs
       FleetSeason<-season[,2]
       FleetSeason[is.na(FleetSeason)]<-0
       if(FleetN>1)
         FleetSeason<-apply(!is.na(season[,2:ncol(season)]),1,sum)
-      if(any(FleetSeason<FleetN,na.rm=T) & timeStep==initManage) 
-        CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SeasonSunk 
+#       if(any(FleetSeason<FleetN,na.rm=T) & timeStep==initManage) 
+#         CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SeasonSunk 
+#       
+#       CostOfManagement[timeStep]<- CostOfManagement[timeStep] + sum(1-NoTakeZone)*MPAcost
       
-      CostOfManagement[timeStep]<- CostOfManagement[timeStep] + sum(1-NoTakeZone)*MPAcost
-      
-      if((SizeLimit[flt])>0)
-        CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeCost
-      
+#       if((SizeLimit[flt])>0)
+#         CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SizeCost
+#       
       #==if all fisheries are open, there is no cost of enforcing a season
-      if(FleetSeason[timeStep%%12+1]<FleetN)
-        CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SeasonCost
+#       if(FleetSeason[timeStep%%12+1]<FleetN)
+#         CostOfManagement[timeStep]<- CostOfManagement[timeStep] + SeasonCost
       
     } # end timestep
     

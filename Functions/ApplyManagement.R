@@ -18,7 +18,7 @@ ApplyManagement<- function(Strat,Management,Fishery)
     Fishery$season<- Management$Season
   }
   
-  if (Strat$Effort==1)
+  if (Strat$VesselBuyback==1)
   {
     Fishery$Fishers<- Management$Effort
     
@@ -26,11 +26,21 @@ ApplyManagement<- function(Strat,Management,Fishery)
   
   if (Strat$Gear==1)
   {
-    Fishery$Sel50<- Fishery$Sel50*Management$Gear
+    Fishery$Sel50<- Fleets[grep('Sel50',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] *Management$Gear
     
     #     Fishery$Sel50<- Fishery$Sel50*Management$Gear
     
   }
+  
+  if (Strat$Capacity==1)
+  {
+    Fishery$Price<- Fleets[grep('price',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] * Management$Capacity[1]
+    
+    Fishery$maxCapac<- Fleets[grep('maxCapac',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] *Management$Capacity[2]
+    #     Fishery$Sel50<- Fishery$Sel50*Management$Gear
+    
+  }
+  
   
   if (Strat$Tax==1)
   {
