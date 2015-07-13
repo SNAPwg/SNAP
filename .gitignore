@@ -5,3 +5,5 @@
 **/*.pdf
 **/*.Rproj
 .Rapp.history
+**/*.pptx
+**/*.key
