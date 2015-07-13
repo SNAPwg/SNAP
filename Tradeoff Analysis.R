@@ -10,16 +10,9 @@ library(caTools)
 library(plyr)
 library(ggplot2)
 library(gridExtra)
-
-
 library(lattice)
 library(ggthemes)
-source("lenwei.R")
-source("VisualizeMovement.R")
-source("movArray.R")
-source("InitialPop.R")
-source("Recruitment.R")
-source("samplingFunc.R")
+
 
 
 # Storage Settings --------------------------------------------------------
