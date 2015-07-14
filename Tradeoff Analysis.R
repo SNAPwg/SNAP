@@ -24,7 +24,6 @@ Species<- 'Lorna Drum'
 
 RunName<- 'Test MSE'
 
-
 Fishery<- paste(Site,Species)
 
 FisheryPlace<- paste(Site,Species,sep='/')

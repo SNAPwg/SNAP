@@ -1,6 +1,6 @@
 #==this function runs the main population and economic dynamics for simulations given several inputs (usually in the form of csvs)
 
-Master<-function(Life,SimCTL,Fleets,season,Samp,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
+MasterDeprecated<-function(Life,SimCTL,Fleets,season,Samp,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
 {
 FleetN<-ncol(Fleets)-1
 

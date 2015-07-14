@@ -9,6 +9,8 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
   
   BaseSeason<- season
   
+  DataParams<- ShapeDatParams(Samp)
+  
   Results<- list()
   
   Iterations<- SimCTL[grepl('NumIterations',SimCTL[,2]),1]
@@ -66,7 +68,7 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
     }
     
     
-    PortLc<-c(PortX,PortY) #Does this get used anywhere?
+    PortLc<-c(PortX,PortY) #Does this get used anywhere?  I DON'T KNOW.
     
     
     #==dummy spatial matrix
@@ -286,38 +288,38 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
           }	#end fishers
           
           #Sample at the end of fishing if timeStep equals a sampling time step.
-          #   if(timeStep %in% (sampleTimeSteps+burn)){
-          #     Data <- CollectData(timeStep, simTime, burn, FleetN, DataParams, NoTakeZone, SpaceNumAtAgeT,
-          #                         SpaceCatAgeByFisher, SpaceEffort, wgtAtAge, lenAtAge, lenSD, PortX, PortY,kmax,Linf)
-          #     
-          #     # Assign data to storage
-          #     if(DataParams$Aggregate == 0){
-          #       if(timeStep == DataParams$SampStartYr+burn){
-          #         FDCatchData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCatchDat
-          #         FDCPUEData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCPUEDat
-          #         } else {
-          #         FDCatchData[(timeStep-burn),,,] <- Data$FDCatch
-          #         FDCPUEData[(timeStep-burn),,,] <- Data$FDCPUE
-          #         FICatchData[(timeStep-burn),,] <- Data$FICatch
-          #         FICPUEData[(timeStep-burn),,] <- Data$FICPUE
-          #         }
-          #       FDAgeData[(timeStep-burn),,,,] <- Data$AgeFD
-          #       FDSizeData[(timeStep-burn),,,,] <- Data$SizeFD
-          #     } else {
-          #       if(timeStep == DataParams$SampStartYr+burn){
-          #         FDCatchData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCatchDat
-          #         FDCPUEData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCPUEDat
-          #       } else {
-          #         FDCatchData[(timeStep-burn),] <- Data$FDCatch
-          #         FDCPUEData[(timeStep-burn),] <- Data$FDCPUE
-          #         FICatchData[(timeStep-burn)] <- Data$FICatch
-          #         FICPUEData[(timeStep-burn)] <- Data$FICPUE
-          #       }
-          #       FDAgeData[(timeStep-burn),,] <- Data$AgeFD
-          #       FDSizeData[(timeStep-burn),,] <- Data$SizeFD
-          #     }
+            if(timeStep %in% (sampleTimeSteps+burn)){
+              Data <- CollectData(timeStep, simTime, burn, FleetN, DataParams, NoTakeZone, SpaceNumAtAgeT,
+                                  SpaceCatAgeByFisher, SpaceEffort, wgtAtAge, lenAtAge, lenSD, PortX, PortY,kmax,Linf)
+              
+              # Assign data to storage
+              if(DataParams$Aggregate == 0){
+                if(timeStep == DataParams$SampStartYr+burn){
+                  FDCatchData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCatchDat
+                  FDCPUEData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCPUEDat
+                  } else {
+                  FDCatchData[(timeStep-burn),,,] <- Data$FDCatch
+                  FDCPUEData[(timeStep-burn),,,] <- Data$FDCPUE
+                  FICatchData[(timeStep-burn),,] <- Data$FICatch
+                  FICPUEData[(timeStep-burn),,] <- Data$FICPUE
+                  }
+                FDAgeData[(timeStep-burn),,,,] <- Data$AgeFD
+                FDSizeData[(timeStep-burn),,,,] <- Data$SizeFD
+              } else {
+                if(timeStep == DataParams$SampStartYr+burn){
+                  FDCatchData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCatchDat
+                  FDCPUEData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCPUEDat
+                } else {
+                  FDCatchData[(timeStep-burn),] <- Data$FDCatch
+                  FDCPUEData[(timeStep-burn),] <- Data$FDCPUE
+                  FICatchData[(timeStep-burn)] <- Data$FICatch
+                  FICPUEData[(timeStep-burn)] <- Data$FICPUE
+                }
+                FDAgeData[(timeStep-burn),,] <- Data$AgeFD
+                FDSizeData[(timeStep-burn),,] <- Data$SizeFD
+              }
           
-          #     }# if sample time steps
+              }# if sample time steps
           
           ######## Should add if statement here with a management loop####
           ####################################################

@@ -167,10 +167,10 @@ CollectHistCatchData = function(tt,burn,SampStartYr,SpaceCatAgeByFisher,histCatc
     #Calculate Historical observation error in catch: If not reporting error, sigHistCatch = 0
     #obsError <- rnorm(n=length(histStartYr:tt),mean = -(sigHistCatch)^2/2,sd = sigHistCatch) ##### Error in reported catches is based on Bousquet et al. 2009
     obsError <- rnorm(n=length((histStartYr):(tt)),mean = 0,sd = sigHistCatch)
-    obsevervedCatches <- sweep(SCTByFleetNew,MARGIN=1,obsError,'+')
+    observedCatches <- sweep(SCTByFleetNew,MARGIN=1,obsError,'+')
     
     # Add in a potential reporting bias
-    biasedCatches <- obsevervedCatches + obsevervedCatches*catchBias #catchBias is (-1,1),with 0 = no Bias
+    biasedCatches <- observedCatches + observedCatches*catchBias #catchBias is (-1,1),with 0 = no Bias
     CatchHist_FD <-  biasedCatches
     
     # Aggregate Historical Catches?
@@ -198,10 +198,10 @@ CollectHistCPUEData = function(SpaceEffort,histEffortFD,histStartYr,Aggregate,tt
     #Calculate Historical observation error in catch: If not reporting error, sigHistCatch = 0
     #obsError <- rnorm(n=length(histStartYr:tt),mean = -(sigHistCatch)^2/2,sd = sigHistCatch) ##### Error in reported catches is based on Bousquet et al. 2009
     obsError <- rnorm(n=length((histStartYr):(tt)),mean = 0,sd = sigHistCatch)
-    obsevervedCatches <- sweep(SCTByFleetNew,MARGIN=1,obsError,'+')
+    observedCatches <- sweep(SCTByFleetNew,MARGIN=1,obsError,'+')
     
     # Add in a potential reporting bias
-    biasedCatches <- obsevervedCatches + obsevervedCatches*catchBias #catchBias is (-1,1),with 0 = no Bias
+    biasedCatches <- observedCatches + observedCatches*catchBias #catchBias is (-1,1),with 0 = no Bias
     CatchHist_FD <-  biasedCatches
     
     # Eliminate Zeros in Effort to avoid dividing by zero
@@ -237,8 +237,8 @@ CollectFisheryCatch <- function(tt,SpaceCatAgeByFisher,Aggregate,fl,wgtAtAge,sig
   #Calculate Historical observation error in catch: If not reporting error, sigHistCatch = 0
   #obsError <- rnorm(n=length(histStartYr:tt),mean = -(sigHistCatch)^2/2,sd = sigHistCatch) ##### Error in reported catches is based on Bousquet et al. 2009
   obsError <- rnorm(n=1, mean = 0,sd = sigHistCatch)
-  obsevervedCatches <- obsError + SCTByFleetNew
-  FisheryCatch <- replace(obsevervedCatches, collCatchFD == 0, NA)
+  observedCatches <- obsError + SCTByFleetNew
+  FisheryCatch <- replace(observedCatches, collCatchFD == 0, NA)
   
   if (Aggregate == 2){
     Final <- FisheryCatch
@@ -264,8 +264,8 @@ CollectFisheryCPUE <- function(tt,SpaceCatAgeByFisher,SpaceEffort,fl,collEffortF
   #Calculate Historical observation error in catch: If not reporting error, sigHistCatch = 0
   #obsError <- rnorm(n=length(histStartYr:tt),mean = -(sigHistCatch)^2/2,sd = sigHistCatch) ##### Error in reported catches is based on Bousquet et al. 2009
   obsError <- rnorm(n=1, mean = 0,sd = sigHistCatch)
-  obsevervedCatches <- obsError + SCTByFleetNew
-  FisheryCatch <- replace(obsevervedCatches, collCatchFD == 0, NA)
+  observedCatches <- obsError + SCTByFleetNew
+  FisheryCatch <- replace(observedCatches, collCatchFD == 0, NA)
   
   ## effort data collected from each patch?
   Eff_Temp <-SpaceEffort[tt,,,fl]*collEffortFD ## should end up with effort in eahc patch, with 0s where there is no data
@@ -393,13 +393,13 @@ CollectCatchFI <- function(tt,SurveyCatchAtAge,collCatchFI,sigSurvey,wgtAtAge,Ag
   #Calculate  observation error in catch: If not reporting error, sigHistCatch = 0
   obsError <- rnorm(n=1, mean = 0,sd = sigSurvey)
   observedCatches <- obsError + SurvCatchPerPatchNew
-  SurveyCatch <- replace(obsevervedCatches, collCatchFI == 0, NA)
+  SurveyCatch <- replace(observedCatches, collCatchFI == 0, NA)
 
   if (Aggregate == 2){
     Final <-  SurveyCatch
   } else {
     Final <- sum(SurveyCatch,na.rm=TRUE)
-    if(sum(collCatchFD) == 0){
+    if(sum(collCatchFI) == 0){
       Final <- NA
     }
   }
@@ -415,7 +415,7 @@ CollectSurvCPUE <- function(SurveyCatchAtAge,SurveyF,Survey_q,collEffortFI,Aggre
   #Calculate  observation error in catch: If not reporting error, sigHistCatch = 0
   obsError <- rnorm(n=1, mean = 0,sd = sigSurvey)
   observedCatches <- obsError + SurvCatchPerPatchNew
-  SurveyCatch <- replace(obsevervedCatches, collCatchFI == 0, NA)
+  SurveyCatch <- replace(observedCatches, collCatchFI == 0, NA)
   
   SurvEffort <- SurveyF * Survey_q 
   SurvEffTemp <- SurvEffort*collEffortFI
