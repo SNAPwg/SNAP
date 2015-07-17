@@ -1,4 +1,4 @@
-0,# SizeLimit = indicates if a size limit is in place (76.2 Wade 2012)
+10,# SizeLimit = indicates if a size limit is in place (76.2 Wade 2012)
 2.68,# Sel50 =selectivity by age (50%) (informing spatial model methods)
 3.24,# Sel95 = selectivity by age (95%)
 1,# q = fishery catchability

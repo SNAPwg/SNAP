@@ -1,1 +1,1 @@
-Plan,SizeLimit,NTZ,Season,Effort,Gear,TaxAll,1,1,1,1,1,1Size,1,0,0,0,0,0NTZ,0,1,0,0,0,0Season,0,0,1,0,0,0Effort,0,0,0,1,0,0Gear,0,0,0,0,1,0Tax,0,0,0,0,0,1
+Plan,SizeLimit,NTZ,Season,VesselBuyback,Capacity,Tax,GearAll,1,1,1,1,1,1,1SizeLimit,1,0,0,0,0,0,0NTZ,0,1,0,0,0,0,0Season,0,0,1,0,0,0,0VesselBuyback,0,0,0,1,0,0,0Capacity,0,0,0,0,1,0,0Tax,0,0,0,0,0,1,0Gear,0,0,0,0,0,0,1

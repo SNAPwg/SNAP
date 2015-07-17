@@ -1,6 +1,6 @@
 #==this function runs the main population and economic dynamics for simulations given several inputs (usually in the form of csvs)
 
-Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
+Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZoneInit,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
 {
   
   BaseLife<- Life
@@ -9,7 +9,7 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
   
   BaseSeason<- season
   
-  DataParams<- ShapeDatParams(Samp)
+  DataParams<- ShapeDatParams(Samp) #didn't realize these were included in Fishery below...
   
   Results<- list()
   
@@ -36,7 +36,7 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
       Fleets<- StochTerms$Fleets
     }
     
-    Fishery<- ShapeFishery(Life,Fleets,SimCTL,season,NoTakeZoneNULL,Samp)
+    Fishery<- ShapeFishery(Life,Fleets,SimCTL,season,NoTakeZoneInit,Samp)
         
     
     Fishery$ManagementPlan<- ManageStrats$Plan
@@ -107,18 +107,23 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
     #===========================================================
     
     #==population dynamics array tracking number at age in a patch by year
-    SpaceNumAtAgeT<-array(dim=c((simTime),SpaceR,SpaceC,kmax))
-    SpaceCatAgeByFisher<-array(dim=c(simTime-burn+1,SpaceR,SpaceC,kmax,max(Fishers),FleetN)) #in numbers
-    SpaceEffort<-array(0,dim=c(simTime-burn+1,SpaceR,SpaceC,FleetN))
+    SpaceNumAtAgeT      <-array(dim=c((simTime),SpaceR,SpaceC,kmax))
+    SpaceCatAgeByFisher <-array(dim=c(simTime-burn+1,SpaceR,SpaceC,kmax,max(Fishers),FleetN)) #in numbers
+    SpaceEffort         <-array(0,dim=c(simTime-burn+1,SpaceR,SpaceC,FleetN))
     
-    CatchByFisher<-array(dim=c(max(Fishers),(simTime-burn+1),FleetN))
-    ProfitByFisher<-array(dim=c(max(Fishers),(simTime-burn+1),FleetN))
-    CostByFisher<-array(dim=c(max(Fishers),simTime-burn+1,FleetN))
-    SpawningBiomass<-rep(0,simTime-burn)
-    NumbersExplt<-rep(0,simTime-burn)
-    CostOfManagement<-rep(0,simTime-burn)
-    InsideMPAspbio<-rep(0,simTime-burn)
-    OutsideMPAspbio<-rep(0,simTime-burn)
+    CatchByFisher       <-array(dim=c(max(Fishers),(simTime-burn+1),FleetN))
+    ProfitByFisher      <-array(dim=c(max(Fishers),(simTime-burn+1),FleetN))
+    CostByFisher        <-array(dim=c(max(Fishers),simTime-burn+1,FleetN))
+    SpawningBiomass     <-rep(0,simTime-burn)
+    NumbersExplt        <-rep(0,simTime-burn)
+    CostOfManagement    <-rep(0,simTime-burn)
+    InsideMPAspbio      <-rep(0,simTime-burn)
+    OutsideMPAspbio     <-rep(0,simTime-burn)
+    
+    #==data.frames for data from assessment
+    CatchData           <-data.frame(Species=character(0),TimeStep=numeric(0),Catch=numeric(0),Units=character(0))
+    IndexData           <-data.frame(Species=character(0),TimeStep=numeric(0),Index=numeric(0),Units=character(0),MPA=numeric(0),Inside=numeric(0),PropMPA=numeric(0))
+    LengthData          <-data.frame(Species=character(0),TimeStep=numeric(0),Length=numeric(0),Units=character(0),MPA=numeric(0),Inside=numeric(0),PropMPA=numeric(0))
     
     #==index for spatial area==========================
     coords<-NULL
@@ -153,12 +158,13 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
       # 	    ani.record(reset=TRUE)
       #       ani.options(interval=.01)	
     }
-    
+
     for(timeStep in burn:simTime) 
     { 
-      #   NoTakeZone<-NoTakeZoneNULL
+      NoTakeZone<-NoTakeZoneInit
       if(timeStep>=initManage)
       {
+        NoTakeZone<-NoTakeZoneImp
         
         Fishery<- ApplyManagement(Strat=ManageStrats,Management=Management,Fishery=Fishery)
         
@@ -286,44 +292,122 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
               
             }
           }	#end fishers
+        } # end if for season
+        
+          MPApresent<-sum(NoTakeZone==0)>0
+          PropMPA<-sum(NoTakeZone==0)/(nrow(NoTakeZone)*ncol(NoTakeZone))
+          LengthSampN<-1000
           
+          #==if no data collection int hat time step, add a row without data (this is important for some methods)
+          if((timeStep %in% (sampleTimeSteps+burn))==FALSE)
+          {
+            inCat           <-data.frame(Species=Species,TimeStep=timeStep,Catch=NA,Units="Biomass")
+            CatchData       <-rbind(CatchData,inCat)
+    
+            inIndex         <-data.frame(Species=Species,TimeStep=timeStep,Index=NA,Units="Biomass",MPA=MPApresent,Inside=NA,PropMPA=PropMPA)
+            IndexData       <-rbind(IndexData,inIndex)
+            
+            inLenDat        <-data.frame(Species=Species,TimeStep=timeStep,Length=NA,Units="mm",MPA=MPApresent,Inside=NA,PropMPA=PropMPA)
+            LengthData      <-rbind(LengthData,inLenDat)
+          }
+                  
+          #==if data collection, then deterministic sampling
+          #==make into a function eventually
+#           CollecteDataDet<-function(arguments,LengthSampN=5000)
+#           {
+          if(timeStep %in% (sampleTimeSteps+burn))
+           {          
+          #==actual catch
+          ObservedCatch   <-apply(CatchByFisher,c(2),sum,na.rm=T)[timeStep-burn+1] # catch in biomass (Fishers,year,fleet)
+          inCat           <-data.frame(Species=Species,TimeStep=timeStep,Catch=ObservedCatch,Units="Biomass")
+          CatchData       <-rbind(CatchData,inCat)
+
+        
+          if(PropMPA>0)
+          {
+          # sample for lengths inside MPA
+          tempNbyAgeAndSpace       <-SpaceNumAtAgeT[timeStep,,,]
+          NatAgeInsideMPA          <-tempNbyAgeAndSpace
+          for(d in 1:length(FishSel[,flt]))
+            NatAgeInsideMPA[,,d]   <-tempNbyAgeAndSpace[,,d]*FishSel[d,1]*as.matrix(-1*(NoTakeZone-1))
+          
+          NatAgeInsideMPA[NatAgeInsideMPA==0]<-NA
+          totalLengthStruc         <-apply(NatAgeInsideMPA,c(3),sum,na.rm=T)
+          sampledAges              <-sample(seq(1,kmax),LengthSampN,prob=totalLengthStruc,replace=TRUE)
+          sampledLengths           <-sampledAges*Fishery$lenAtAge[sampledAges]*rnorm(LengthSampN,1,Fishery$lenSD)
+          inLenDat                 <-data.frame(Species=rep(Species,LengthSampN),TimeStep=rep(timeStep,LengthSampN),Length=sampledLengths,
+                                                Units=rep("mm",LengthSampN),MPA=rep(MPApresent,LengthSampN),Inside=rep(1,LengthSampN),
+                                                PropMPA=rep(PropMPA,LengthSampN))
+          inLenDat                 <-inLenDat[-as.numeric(inLenDat[,3])<0,] # sometimes you get negatives when adding the uncertainty at small sizes
+          LengthData               <-rbind(LengthData,inLenDat)
+          
+          ExpBioInsideMPA          <-sum(apply(NatAgeInsideMPA,c(3),sum,na.rm=t)*FishSel[,1]*wgtAtAge)
+          inExpBio                 <-data.frame(Species=Species,TimeStep=timeStep,Index=ExpBioInsideMPA,Units="Biomass",MPA=MPApresent,Inside=1,PropMPA=PropMPA)
+          IndexData                <-rbind(IndexData,inExpBio)
+          }
+
+
+          # sample for lengths and biomass outside MPA
+          tempNbyAgeAndSpace       <-SpaceNumAtAgeT[timeStep,,,]
+          NatAgeOutsideMPA          <-tempNbyAgeAndSpace
+          for(d in 1:length(FishSel[,flt]))
+            NatAgeOutsideMPA[,,d]   <-tempNbyAgeAndSpace[,,d]*FishSel[d,1]*as.matrix(NoTakeZone)
+          
+          NatAgeOutsideMPA[NatAgeOutsideMPA==0]<-NA
+          totalLengthStruc         <-apply(NatAgeOutsideMPA,c(3),sum,na.rm=T)
+          sampledAges              <-sample(seq(1,kmax),LengthSampN,prob=totalLengthStruc,replace=TRUE)
+          sampledLengths           <-sampledAges*Fishery$lenAtAge[sampledAges]*rnorm(LengthSampN,1,Fishery$lenSD)  
+          inLenDat                 <-data.frame(Species=rep(Species,LengthSampN),TimeStep=rep(timeStep,LengthSampN),Length=sampledLengths,
+                                                Units=rep("mm",LengthSampN),MPA=rep(MPApresent,LengthSampN),Inside=rep(1,LengthSampN),
+                                                PropMPA=rep(PropMPA,LengthSampN))
+          inLenDat                 <-inLenDat[-as.numeric(inLenDat[,3])<0,] # sometimes you get negatives
+          LengthData               <-rbind(LengthData,inLenDat)
+
+          # Index of exploitable biomass. This isn't 'CPUE', because effort is omniscient. 
+          ExpBioOutsideMPA        <-sum(apply(NatAgeOutsideMPA,c(3),sum,na.rm=t)*FishSel[,1]*wgtAtAge)
+          inExpBio                 <-data.frame(Species=Species,TimeStep=timeStep,Index=ExpBioOutsideMPA,Units="Biomass",MPA=MPApresent,Inside=0,PropMPA=PropMPA)
+          IndexData               <-rbind(IndexData,inExpBio)
+#           return()
+#           }
+          } # SAMPLING TIME STEP
+
+          #==SARAH'S MORE COMPLICATED SAMPLING PROTOCOL FOR FUTURE USE==
           #Sample at the end of fishing if timeStep equals a sampling time step.
-            if(timeStep %in% (sampleTimeSteps+burn)){
-              Data <- CollectData(timeStep, simTime, burn, FleetN, DataParams, NoTakeZone, SpaceNumAtAgeT,
-                                  SpaceCatAgeByFisher, SpaceEffort, wgtAtAge, lenAtAge, lenSD, PortX, PortY,kmax,Linf)
-              
-              # Assign data to storage
-              if(DataParams$Aggregate == 0){
-                if(timeStep == DataParams$SampStartYr+burn){
-                  FDCatchData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCatchDat
-                  FDCPUEData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCPUEDat
-                  } else {
-                  FDCatchData[(timeStep-burn),,,] <- Data$FDCatch
-                  FDCPUEData[(timeStep-burn),,,] <- Data$FDCPUE
-                  FICatchData[(timeStep-burn),,] <- Data$FICatch
-                  FICPUEData[(timeStep-burn),,] <- Data$FICPUE
-                  }
-                FDAgeData[(timeStep-burn),,,,] <- Data$AgeFD
-                FDSizeData[(timeStep-burn),,,,] <- Data$SizeFD
-              } else {
-                if(timeStep == DataParams$SampStartYr+burn){
-                  FDCatchData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCatchDat
-                  FDCPUEData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCPUEDat
-                } else {
-                  FDCatchData[(timeStep-burn),] <- Data$FDCatch
-                  FDCPUEData[(timeStep-burn),] <- Data$FDCPUE
-                  FICatchData[(timeStep-burn)] <- Data$FICatch
-                  FICPUEData[(timeStep-burn)] <- Data$FICPUE
-                }
-                FDAgeData[(timeStep-burn),,] <- Data$AgeFD
-                FDSizeData[(timeStep-burn),,] <- Data$SizeFD
-              }
-          
-              }# if sample time steps
-          
+#             if(timeStep %in% (sampleTimeSteps+burn)){
+#               Data <- CollectData(timeStep, simTime, burn, FleetN, DataParams, NoTakeZone, SpaceNumAtAgeT,
+#                                   SpaceCatAgeByFisher, SpaceEffort, wgtAtAge, lenAtAge, lenSD, PortX, PortY,kmax,Linf)
+#               
+#               # Assign data to storage
+#               if(DataParams$Aggregate == 0){
+#                 if(timeStep == DataParams$SampStartYr+burn){
+#                   FDCatchData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCatchDat
+#                   FDCPUEData[DataParams$histStartYr:(timeStep-burn),,,] <- Data$histCPUEDat
+#                   } else {
+#                   FDCatchData[(timeStep-burn),,,] <- Data$FDCatch
+#                   FDCPUEData[(timeStep-burn),,,] <- Data$FDCPUE
+#                   FICatchData[(timeStep-burn),,] <- Data$FICatch
+#                   FICPUEData[(timeStep-burn),,] <- Data$FICPUE
+#                   }
+#                 FDAgeData[(timeStep-burn),,,,] <- Data$AgeFD
+#                 FDSizeData[(timeStep-burn),,,,] <- Data$SizeFD
+#               } else {
+#                 if(timeStep == DataParams$SampStartYr+burn){
+#                   FDCatchData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCatchDat
+#                   FDCPUEData[DataParams$histStartYr:(timeStep-burn),] <- Data$histCPUEDat
+#                 } else {
+#                   FDCatchData[(timeStep-burn),] <- Data$FDCatch
+#                   FDCPUEData[(timeStep-burn),] <- Data$FDCPUE
+#                   FICatchData[(timeStep-burn)] <- Data$FICatch
+#                   FICPUEData[(timeStep-burn)] <- Data$FICPUE
+#                 }
+#                 FDAgeData[(timeStep-burn),,] <- Data$AgeFD
+#                 FDSizeData[(timeStep-burn),,] <- Data$SizeFD
+#               }
+#           
+#               }# if sample time steps
+#           
           ######## Should add if statement here with a management loop####
           ####################################################
-        } #end if for season
       } #end fleet 
       
       #==natural mortality (depends on timestep size)
@@ -445,8 +529,8 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
     
     Results[[s]]<- (list(CatchByFisher=CatchByFisher,CostByFisher=CostByFisher,ProfitByFisher=ProfitByFisher,CostOfManagement=CostOfManagement,
                          SpawningBiomass=SpawningBiomass,SpaceEffort=SpaceEffort,InsideMPAspbio=InsideMPAspbio,OutsideMPAspbio=OutsideMPAspbio,
-                         ExploitableNumbers=NumbersExplt,Fishery=Fishery))
-  } #Clost stochasticity loop
+                         ExploitableNumbers=NumbersExplt,Fishery=Fishery,IndexData=IndexData,LengthData=LengthData,CatchData=CatchData))
+  } #Close stochasticity loop
   return(Results)
 }
 
