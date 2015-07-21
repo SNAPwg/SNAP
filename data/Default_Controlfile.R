@@ -12,7 +12,7 @@ Fish$PeakTol<- 0.001 #Wiggle room parameter for finding peaks in catch curve
 
 Fish$vbk<- NA
 
-Fish$LengthError<- DefaultSD
+# Fish$LengthError<- DefaultSD
 
 Fish$AgeSD<- 1
 
@@ -35,7 +35,7 @@ Fish$MvK<- NA
 
 # Fish$MaxAge<- log(.01)/-Fish$M #Max age is age at thich only 1% of population are left. Can also be set manually if needed
 
-Fish$MortalityError<- DefaultSD
+# Fish$MortalityError<- DefaultSD
 
 Fish$AgeMat50<- NA
 
@@ -47,7 +47,7 @@ Fish$LengthMatRatio<- NA
 
 Fish$PLD<- 31
 
-Fish$VBSD<- DefaultSD
+# Fish$VBSD<- DefaultSD
 
 Fish$VBErrorSlope<- 0.1
 

@@ -1,6 +1,13 @@
-AgeAtLength<- function(vbk,linf,t0,length)
+AgeAtLength<- function(Lengths,Fish,Error)
 {
-  Age<-  ((log(1-length/linf)/-vbk)+t0)
+  # Error<- Fish$LengthError	
+  Lengths[is.na(Lengths)]<- 0
+  # Lengths<- LengthDat$Length
+  AgeSD<- Error*(1+Fish$VBErrorSlope*Lengths/Fish$Linf)
+  #   RawAges<- (log(1-(Lengths)/Fish$Linf)/-Fish$vbk)+Fish$t0
+  RawAges<- (log(1-pmin(Lengths,Fish$Linf*.99)/Fish$Linf)/-Fish$vbk)+Fish$t0
+  #   AgeWithError<- RawAges*rlnorm(length(Lengths),mean=0,sd=AgeSD)
+  AgeWithError<- pmax(1,RawAges+rnorm(length(Lengths),mean=0,sd=AgeSD))
   
-  return(Age)
+  return(AgeWithError)
 }
