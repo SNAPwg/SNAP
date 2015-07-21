@@ -18,9 +18,9 @@ library(ggthemes)
 # Storage Settings --------------------------------------------------------
 
 
-Site<- 'Peru'
+Site<- 'Belize'
 
-Species<- 'Lorna Drum'
+Species<- 'Lobster'
 
 RunName<- 'Test MSE'
 
@@ -48,13 +48,13 @@ OriginalWorkingDir<- getwd()
 setwd(FisheryPlace)
 
 Life<-read.csv("LifeHistory.csv")                 # life history characteristics
-SimCTL<-read.csv("GrandSimCtlPeru.csv",header=F)               # simulation controls
+SimCTL<-read.csv("GrandSimCtl.csv",header=F)               # simulation controls
 Fleets<-read.csv("Fleets.csv",header=F)                   # fleet characteristics  
 season<-read.csv("season.csv",header=F)           # fishing seasons by fleet
 Samp <- read.csv("SamplingParams.csv")            # sampling controls for management
-NoTakeZoneNULL<-read.csv("notakezonePeruNULL.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
-NoTakeZoneImp<-read.csv("notakezonePeru.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
-habitat<-read.csv("habitatPeru.csv",header=F)       
+NoTakeZoneInit<-read.csv("notakezoneNULL.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
+NoTakeZoneImp<-read.csv("notakezone.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
+habitat<-read.csv("KreigHabitat.csv",header=F)       
 ManageStrats<- read.csv('ManagementStrategies.csv')
 setwd(OriginalWorkingDir)
 
@@ -96,7 +96,7 @@ colnames(ManageResults) <- c('ManagementPlan','Catch','FishingCost','FishingProf
 for (i in 1:dim(ManageStrats)[1]) #Can replace this with mclapply later if this takes too long, easier to debug this way
 {
   
-  ManageSims[[i]]<-Master(Life,SimCTL,Fleets,season,Samp,ManageStrats[i,],Management,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=T)
+  ManageSims[[i]]<-Master(Life,SimCTL,Fleets,season,Samp,ManageStrats[i,],Management,NoTakeZoneInit,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=T)
   
   #   Test<-Master(Life,SimCTL,Fleets,season,Samp,ManageStrats[i,],Management,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
   
