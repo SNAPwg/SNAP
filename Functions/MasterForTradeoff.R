@@ -1,6 +1,6 @@
 #==this function runs the main population and economic dynamics for simulations given several inputs (usually in the form of csvs)
 
-Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZoneInit,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
+Master<-function(Life,SimCTL,Fleets,Species, Taxa, season,Samp,ManageStrats,Management,NoTakeZoneInit,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
 {
 
   BaseLife<- Life
@@ -12,6 +12,8 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
   DataParams<- ShapeDatParams(Samp) #didn't realize these were included in Fishery below...
 
   Results<- list()
+
+  Assessments <- list()
 
   Iterations<- SimCTL[grepl('NumIterations',SimCTL[,2]),1]
 
@@ -36,7 +38,7 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
       Fleets<- StochTerms$Fleets
     }
 
-    Fishery<- ShapeFishery(Life,Fleets,SimCTL,season,NoTakeZoneInit,Samp)
+    Fishery<- ShapeFishery(Life = Life,Species = Species, Taxa = Taxa, Fleets = Fleets,SimCTL = SimCTL,season = season, NoTakeZone = NoTakeZoneInit,Samp = Samp)
 
 
     Fishery$ManagementPlan<- ManageStrats$Plan
@@ -301,6 +303,8 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
         LengthSampN<-1000
 
         #==if no data collection int hat time step, add a row without data (this is important for some methods)
+        #
+
         if((timeStep %in% (sampleTimeSteps+burn))==FALSE)
         {
           inCat           <-data.frame(Species=Species,TimeStep=timeStep,Catch=NA,Units="Biomass")
@@ -381,11 +385,21 @@ Master<-function(Life,SimCTL,Fleets,season,Samp,ManageStrats,Management,NoTakeZo
         # This "PossibleAssessmen" function will later produce the
         # matrix of assessments and requirements
 
-        PossibleAssessments <- Find_Possible_Assessments(Fishery = Fishery, Data = Monitor_Data)
+        #         if (timeStep == simTime)
+        #         {
+        what_can_we_do <- Find_Possible_Assessments(Fishery = Fishery, Data = Monitor_Data, time_steps = timeStep)
 
-        PossibleAssessments <- c('cpue_trend','catch_trend','length_look')
+        PossibleAssessments <- what_can_we_do$possible_assessments
+        #           browser()
+        #         }
 
-        Assessments <- Assess(Fishery = Fishery, Data = Monitor_Data, Assessments = PossibleAssessments, BatchFolder = BatchFolder, FigureFolder = FigureFolder)
+        Output<- as.data.frame(matrix(NA,nrow=0,ncol=9))
+
+        colnames(Output)<- c('Year','Method','SampleSize','Value','LowerCI','UpperCI','SD','Metric','Flag')
+
+
+        Assessments[[timeStep]] <- Output
+        #         Assessments <- Assess(Fishery = Fishery, Data = Monitor_Data, Assessments = PossibleAssessments, BatchFolder = BatchFolder, FigureFolder = FigureFolder)
 
         #==SARAH'S MORE COMPLICATED SAMPLING PROTOCOL FOR FUTURE USE==
         #Sample at the end of fishing if timeStep equals a sampling time step.

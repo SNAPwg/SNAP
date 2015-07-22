@@ -1,7 +1,7 @@
 ################## SNAP DPSA Tradeoff Analayis Framework #######################
 
-# This wrapper enables the use of the Master simulation framework developed by Cody to test a variety of management interventions. 
-#Version 1.0 will be for one species under multiple management options, with potential for life history uncertainty 
+# This wrapper enables the use of the Master simulation framework developed by Cody to test a variety of management interventions.
+#Version 1.0 will be for one species under multiple management options, with potential for life history uncertainty
 
 rm(list=ls())
 sapply(list.files(pattern="[.]R$", path="Functions", full.names=TRUE), source)
@@ -21,6 +21,8 @@ library(ggthemes)
 Site<- 'Belize'
 
 Species<- 'Lobster'
+
+Taxa <- 'Crustacean'
 
 RunName<- 'Test MSE'
 
@@ -49,12 +51,12 @@ setwd(FisheryPlace)
 
 Life<-read.csv("LifeHistory.csv")                 # life history characteristics
 SimCTL<-read.csv("GrandSimCtl.csv",header=F)               # simulation controls
-Fleets<-read.csv("Fleets.csv",header=F)                   # fleet characteristics  
+Fleets<-read.csv("Fleets.csv",header=F)                   # fleet characteristics
 season<-read.csv("season.csv",header=F)           # fishing seasons by fleet
 Samp <- read.csv("SamplingParams.csv")            # sampling controls for management
 NoTakeZoneInit<-read.csv("notakezoneNULL.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
 NoTakeZoneImp<-read.csv("notakezone.csv",header=F)   # marine protected areas (0=open access, 1=MPA, 2=TURF?)
-habitat<-read.csv("KreigHabitat.csv",header=F)       
+habitat<-read.csv("KreigHabitat.csv",header=F)
 ManageStrats<- read.csv('ManagementStrategies.csv')
 setwd(OriginalWorkingDir)
 
@@ -62,7 +64,7 @@ setwd(OriginalWorkingDir)
 
 Management<- NULL
 
-Management$SizeLimit<- 330
+Management$SizeLimit<- 90
 
 Management$NTZ<- NoTakeZoneImp
 
@@ -70,7 +72,7 @@ shortseason<- season
 
 shortseason[,2]<- NA
 
-shortseason[1:9,2]<- 1 
+shortseason[1:9,2]<- 1
 
 Management$Season<- shortseason
 
@@ -80,7 +82,7 @@ Management$VesselBuyback<- 30
 
 Management$Gear<- 1.5
 
-Management$Capacity<- c(1.1,0.6) #increase in price and decrease in capacity 
+Management$Capacity<- c(1.1,0.6) #increase in price and decrease in capacity
 
 Management$Tax<- 1.3
 
@@ -95,13 +97,14 @@ colnames(ManageResults) <- c('ManagementPlan','Catch','FishingCost','FishingProf
 
 for (i in 1:dim(ManageStrats)[1]) #Can replace this with mclapply later if this takes too long, easier to debug this way
 {
-  
-  ManageSims[[i]]<-Master(Life,SimCTL,Fleets,season,Samp,ManageStrats[i,],Management,NoTakeZoneInit,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=T)
-  
+
+  ManageSims[[i]]<-Master(Life = Life,SimCTL= SimCTL, Species = Species, Taxa = Taxa,Fleets = Fleets,season = season,Samp = Samp,
+                          ManageStrats = ManageStrats[i,],Management = Management,NoTakeZoneInit = NoTakeZoneInit, NoTakeZoneImp = NoTakeZoneImp,habitat = habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=T)
+
   #   Test<-Master(Life,SimCTL,Fleets,season,Samp,ManageStrats[i,],Management,NoTakeZoneNULL,NoTakeZoneImp,habitat,Graphs=F,GraphsFish=F,PrintLifeHistory=F)
-  
+
   show(paste(round(100*(i/dim(ManageStrats)[1])),'% done with management iterations',sep=''))
-  
+
 }
 
 TimeLength<- dim(ManageSims[[1]][[1]]$CatchByFisher)[2] #time run for fishing scenarios
@@ -114,7 +117,7 @@ BurnIn<- SimCTL[grep('burn',SimCTL[,2]),1] #Burn in period
 
 Disc<- 0
 
-MSE <- ldply(ManageSims, function(mod) 
+MSE <- ldply(ManageSims, function(mod)
 {
   data.frame(ldply(mod,function(mod2)
   {
@@ -130,7 +133,7 @@ MSE <- ldply(ManageSims, function(mod)
                rep(mod2$Fishery$VirSpBio,TimeLength),
                rep(sum(mod2$CostOfManagement[BurnIn:SimLength],na.rm=T),TimeLength)
     )
-  } 
+  }
   ))
 })
 

@@ -1,10 +1,10 @@
-ShapeFishery<- function(Life,Fleets,SimCTL,season,NoTakeZone,Samp)
+ShapeFishery<- function(Life,Fleets,SimCTL,season,NoTakeZone,Samp,Species, Taxa)
 {
-  #   
-  
-  
+  #
+
+
   FleetN<-ncol(Fleets)-1
-  
+
   #==life history ==============================
   kmax   	<-Life[grep('kmax',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]              # maximum age
   kmat	 	<-Life[grep('kmat',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]           	  # age at maturity
@@ -16,14 +16,17 @@ ShapeFishery<- function(Life,Fleets,SimCTL,season,NoTakeZone,Samp)
   wtA	  	<-Life[grep('wtA',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]	              #  weight A
   wtB	  	<-Life[grep('wtB',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]	              # weight B
   mat50		<-Life[grep('mat50',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # age at 50% maturity
-  mat95		<-Life[grep('mat95',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # age at 95% maturity 
-  lenSD   <-Life[grep('lenSD',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # standard deviation of length at age
-  
+  mat95		<-Life[grep('mat95',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # age at 95% maturity
+  lenSD   <- Life[grep('lenSD',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # standard deviation of length at age
+  PrinceType <- Life[grep('Prince',Life[,ncol(Life)]),seq(1,ncol(Life)-1)] # Growth type from Prince et al. 2014
+  MvK <- Life[grep('MvK',Life[,ncol(Life)]),seq(1,ncol(Life)-1)] # M over k ratio
+  CommName <- Species
+  Taxa <- Taxa
   if (mat95<=mat50)
   {
     mat95<- 1.1*mat50
   }
-  
+
   #==recruitment================================
   detRec  <-Life[grep('detRec',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]        	    # deterministic recruitment?
   R0	  	<-Life[grep('R0',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             		# Virgin recruitment
@@ -34,10 +37,10 @@ ShapeFishery<- function(Life,Fleets,SimCTL,season,NoTakeZone,Samp)
   sdy	  	<-Life[grep('sdy',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]              	# sd of movement on y axis
   movP50	<-Life[grep('movP50',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # probability moving by length (logistic; 50%; set both to 0 if all move)
   movP95	<-Life[grep('movP95',Life[,ncol(Life)]),seq(1,ncol(Life)-1)]             # probability of moving at length (95%)
-  
+
   MoveProb<-1/(1+exp(-log(19)*((seq(1,kmax)-movP50)/(movP95-movP50))))
   MatAge<-1/(1+exp(-log(19)*((seq(1,kmax)-mat50)/(mat95-mat50))))
-  
+
   lenAtAge<-rep(0,kmax)
   wgtAtAge<-rep(0,kmax)
   for(k in 1:kmax)
@@ -45,15 +48,15 @@ ShapeFishery<- function(Life,Fleets,SimCTL,season,NoTakeZone,Samp)
     lenAtAge[k]<-Linf*(1-exp(-K*(k-t0)))
     wgtAtAge[k]<-wtA*lenAtAge[k]^wtB
   }
-  
+
   SpaceR    <-SimCTL[grep('SpaceR',SimCTL[,2]),1]	    	# Rows in the grid space
   SpaceC	  <-SimCTL[grep('SpaceC',SimCTL[,2]),1]  			# cols in the grid spcae
   burn	  	<-SimCTL[grep('burn',SimCTL[,2]),1]    		  # burn in for movement equilibration (use option "Graphs" in "Initpop" to see that population is thoroughly mixed)
   simTime   <-SimCTL[grep('simTime',SimCTL[,2]),1]     	# time steps for projection
   yearMark  <-SimCTL[grep('yearMark',SimCTL[,2]),1]	  	# number of time steps in a year
   initManage<-SimCTL[grep('initManage',SimCTL[,2]),1]   # year in which to initiate management
-  
-  
+
+
   #==management costs==========================
   MPAsunk     <-SimCTL[grep('MPAsunk',SimCTL[,2]),1]    # start up cost of enforcing an MPA
   MPAcost	    <-SimCTL[grep('MPAcost',SimCTL[,2]),1]		# cost of maintaining a unit of MPA per unit time
@@ -61,10 +64,10 @@ ShapeFishery<- function(Life,Fleets,SimCTL,season,NoTakeZone,Samp)
   SizeCost    <-SimCTL[grep('SizeCost',SimCTL[,2]),1]		# cost of enforcing a size limit per unit of time per port
   SeasonSunk	<-SimCTL[grep('SeasonSunk',SimCTL[,2]),1]		# start up cost of enforcing a season
   SeasonCost	<-SimCTL[grep('SeasonCost',SimCTL[,2]),1]		# cost of enforcing a season per unit of time
-  
+
   #==management auxilliary benefits======================
   MPAtourism	<-SimCTL[grep('MPAtourism',SimCTL[,2]),1]		# average revenue generated per unit MPA per unit time for tourism in an MPA
-  
+
   #==fishery characteristics===================
   SizeLimit	<-as.numeric(Fleets[grep('SizeLimit',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] )
   Sel50		  <-as.numeric(Fleets[grep('Sel50',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)] )		# selectivity by length (9 by len)
@@ -113,13 +116,13 @@ ShapeFishery<- function(Life,Fleets,SimCTL,season,NoTakeZone,Samp)
   DataParams$VBSurvey		    <-Samp[grep('VBSurvey',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]       	# Collect age and size data to estimate VB params? 1 = yes, 2 = no.
   DataParams$Survey_q       <-Samp[grep('Survey_q',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]            	# Survey catchability. Might be different depending on mode of survey (such as dive surveys)
   DataParams$sigSurvey		    <-Samp[grep('sigSurvey',Samp[,ncol(Samp)]),seq(1,ncol(Samp)-1)]       	# Standard deviation of observation error on total catches. If no error, sigHistCatch=0.
-  
+
   sampleTimeSteps <- seq(DataParams$SampStartYr,simTime-burn+1,by=DataParams$SampFreq)  #Time steps in which sampling occurs
-  
+
   ## Set up data storage. Size is different when data is Aggregated.
-  
+
   AgeLimit<-  round((log(1-SizeLimit/Linf)/-K)+t0)
-  
+
   FishSel<-matrix(ncol=FleetN,nrow=kmax)
   for(y in 1:FleetN)
   {
@@ -137,18 +140,18 @@ ShapeFishery<- function(Life,Fleets,SimCTL,season,NoTakeZone,Samp)
   TimeHor	  <-as.numeric(Fleets[grep('TimeHor',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# time horizon for evaluation
   Fishers	  <-as.numeric(Fleets[grep('Fishers',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# number of fishers
   maxCapac	<-as.numeric(Fleets[grep('maxCapac',Fleets[,ncol(Fleets)]),seq(1,ncol(Fleets)-1)])		# max capacity of a single fisherman in a timestep (kg) (can also be a 'trip limit'/permit implementation)
-  
+
   rm(Life,Fleets,SimCTL,Samp)
-  
+
   Things<- ls()
-  
+
   Fishery<- list()
-  
+
   for (t in 1:length(Things))
   {
     eval(parse(text=paste('Fishery$',Things[t],'<- ',Things[t],sep='')))
   }
-  
-  
+
+
   return(Fishery)
 } #Close Function
