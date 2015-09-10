@@ -12,6 +12,8 @@ library(ggplot2)
 library(gridExtra)
 library(lattice)
 library(ggthemes)
+library(dplyr)
+library(tidyr)
 
 
 
