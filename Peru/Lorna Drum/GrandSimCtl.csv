@@ -1,1 +1,20 @@
-8,# SpaceR = rows in the simulated grid space12,# SpaceC = columns in the simulated grid space1,# detRec = deterministic recruitment? (1= deterministic)25,"# burn = burn in for movement initial equilibration of movement (use option Graphs in """"Initpop"""" to see that population is thoroughly mixed)"120,# initManage = the time step at which management is initiated (do these in multiples of yrMark)240,# simTime = time steps for projections (do these in multiples of yrMark)12,# number of time steps in a year (e.g. yearMark==12 means a monthly time step)64800,# NTZ Sunk = start up cost of enforcing an MPA70000,# NTZ Cost = cost of maintaining a unit of MPA per unit time1,# SizeLimit Sunk = start up cost of enforcing a size limit1550,# SizeLimit Cost = cost of enforcing a size limit per unit time per port1,# Season Sunk = start up cost of enforcing a season2500,# Season Cost = cost of enforcing a season per unit of time60000,# Capacity Sunk1550,# Capacity Cost3012000,# VesselBuyback Sunk2500,# VesselBuyback Cost1000,# MPAtourism = average revenue generated per unit MPA per unit time for tourism in an MPA1,# NumIterations = the number of iterations to run on stochastic processes0.1,# mat50_Error = lognormal error in age at maturity 
+8,# SpaceR = rows in the simulated grid space
+12,# SpaceC = columns in the simulated grid space
+1,# detRec = deterministic recruitment? (1= deterministic)
+25,"# burn = burn in for movement initial equilibration of movement (use option Graphs in """"Initpop"""" to see that population is thoroughly mixed)"
+120,# initManage = the time step at which management is initiated (do these in multiples of yrMark)
+240,# simTime = time steps for projections (do these in multiples of yrMark)
+12,# number of time steps in a year (e.g. yearMark==12 means a monthly time step)
+64800,# NTZ Sunk = start up cost of enforcing an MPA
+70000,# NTZ Cost = cost of maintaining a unit of MPA per unit time
+1,# SizeLimit Sunk = start up cost of enforcing a size limit
+1550,# SizeLimit Cost = cost of enforcing a size limit per unit time per port
+1,# Season Sunk = start up cost of enforcing a season
+2500,# Season Cost = cost of enforcing a season per unit of time
+60000,# Capacity Sunk
+1550,# Capacity Cost
+3012000,# VesselBuyback Sunk
+2500,# VesselBuyback Cost
+1000,# MPAtourism = average revenue generated per unit MPA per unit time for tourism in an MPA
+10,# NumIterations = the number of iterations to run on stochastic processes
+0.1,# mat50_Error = lognormal error in age at maturity 
