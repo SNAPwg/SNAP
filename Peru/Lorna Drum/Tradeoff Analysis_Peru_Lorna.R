@@ -25,7 +25,7 @@ Species<- 'Lorna Drum'
 
 Taxa <- NA
 
-RunName<- 'Test MSE_ Sep 2015'
+RunName<- 'Test MSE_ Sep 2015_B'
 
 Fishery<- paste(Site,Species)
 
