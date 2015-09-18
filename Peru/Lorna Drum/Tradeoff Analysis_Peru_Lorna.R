@@ -8,7 +8,6 @@ sapply(list.files(pattern="[.]R$", path="Functions", full.names=TRUE), source)
 library(animation)
 library(caTools)
 library(plyr)
-library(dplyr)
 library(ggplot2)
 library(gridExtra)
 library(lattice)
@@ -17,17 +16,16 @@ library(dplyr)
 library(tidyr)
 
 
-
 # Storage Settings --------------------------------------------------------
 
 
-Site<- 'Belize'
+Site<- 'Peru'
 
-Species<- 'Lobster'
+Species<- 'Lorna Drum'
 
-Taxa <- 'Crustacean'
+Taxa <- NA
 
-RunName<- 'Test MSE'
+RunName<- 'Test MSE_ Sep 2015_B'
 
 Fishery<- paste(Site,Species)
 
@@ -67,7 +65,7 @@ setwd(OriginalWorkingDir)
 
 Management<- NULL
 
-Management$SizeLimit<- 90
+Management$SizeLimit<- 200
 
 Management$NTZ<- NoTakeZoneImp
 

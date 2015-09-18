@@ -70,7 +70,7 @@ Master<-function(Life,SimCTL,Fleets,Species, Taxa, season,Samp,ManageStrats,Mana
     }
 
 
-    PortLc<-c(PortX,PortY) #Does this get used anywhere?  I DON'T KNOW.
+    PortLc<-data.frame(PortX,PortY) 
 
 
     #==dummy spatial matrix
@@ -97,10 +97,30 @@ Master<-function(Life,SimCTL,Fleets,Species, Taxa, season,Samp,ManageStrats,Mana
       mtext(side=2,"Length (cm)",line=2)
       mtext(side=1,"Age (yr)",line=2)
 
-      filled.contour(matrix(as.numeric(unlist(habitat)),ncol=SpaceC),x=seq(1,SpaceR),y=seq(1,SpaceC))
-      mtext(side=3,"Habitat quality")
-      filled.contour(matrix(as.numeric(unlist(NoTakeZone)),ncol=SpaceC),x=seq(1,SpaceR),y=seq(1,SpaceC))
-      mtext(side=3,"No take zones (0)")
+      #put habitat and NTZ data in long format for plotting
+      habitatL=habitat
+      colnames(habitatL)=1:SpaceC
+      habitatL$x=rownames(habitatL)
+      habitatL=gather(habitatL,y,quality, 1:SpaceC)
+      
+      NoTakeZoneL=NoTakeZone
+      colnames(NoTakeZoneL)=1:SpaceC
+      NoTakeZoneL$x=rownames(NoTakeZoneL)
+      NoTakeZoneL=gather(NoTakeZoneL,y,closures, 1:SpaceC)
+      NoTakeZoneL$closures=as.factor(NoTakeZoneL$closures)
+      
+      
+      
+      print(qplot(x, y, data =habitatL, fill = quality, geom = "raster")+
+        geom_point(aes(x=PortX, y=PortY-0.35,shape="points",name="Port"),size=5,color="slategrey")+
+        scale_shape_discrete(name  ="",labels="Port"))
+      
+      
+      print(qplot(x, y, data = NoTakeZoneL, fill = closures, geom = "raster")+
+        scale_fill_manual(breaks=c("1","0"),values=c('skyblue2','red'),labels=c("Open","Closed"))+
+        ggtitle("Current Area Closures")+
+        geom_point(aes(x=PortX, y=PortY-0.35,shape="points",name="Port"),size=5,color="slategrey")+
+        scale_shape_discrete(name  ="",labels="Port"))
       dev.off()
     }
 
