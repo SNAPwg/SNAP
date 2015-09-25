@@ -419,7 +419,7 @@ Master<-function(Life,SimCTL,Fleets,Species, Taxa, season,Samp,ManageStrats,Mana
 
 
         Assessments[[timeStep]] <- Output
-        Fishery$MvK <- 1.6
+
 #         Assessments <- Assess(Fishery = Fishery, Data = Monitor_Data, Assessments = PossibleAssessments, BatchFolder = BatchFolder, FigureFolder = FigureFolder)
         #==SARAH'S MORE COMPLICATED SAMPLING PROTOCOL FOR FUTURE USE==
         #Sample at the end of fishing if timeStep equals a sampling time step.
