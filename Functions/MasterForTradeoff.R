@@ -70,7 +70,7 @@ Master<-function(Life,SimCTL,Fleets,Species, Taxa, season,Samp,ManageStrats,Mana
     }
 
 
-    PortLc<-data.frame(PortX,PortY) 
+    PortLc<-data.frame(PortX,PortY)
 
 
     #==dummy spatial matrix
@@ -102,25 +102,25 @@ Master<-function(Life,SimCTL,Fleets,Species, Taxa, season,Samp,ManageStrats,Mana
       colnames(habitatL)=1:SpaceC
       habitatL$x=rownames(habitatL)
       habitatL=gather(habitatL,y,quality, 1:SpaceC)
-      
+
       NoTakeZoneL=NoTakeZone
       colnames(NoTakeZoneL)=1:SpaceC
       NoTakeZoneL$x=rownames(NoTakeZoneL)
       NoTakeZoneL=gather(NoTakeZoneL,y,closures, 1:SpaceC)
       NoTakeZoneL$closures=as.factor(NoTakeZoneL$closures)
-      
-      
-      
+
+
+
       print(qplot(x, y, data =habitatL, fill = quality, geom = "raster")+
-        geom_point(aes(x=PortX, y=PortY-0.35,shape="points",name="Port"),size=5,color="slategrey")+
-        scale_shape_discrete(name  ="",labels="Port"))
-      
-      
+              geom_point(aes(x=PortX, y=PortY-0.35,shape="points",name="Port"),size=5,color="slategrey")+
+              scale_shape_discrete(name  ="",labels="Port"))
+
+
       print(qplot(x, y, data = NoTakeZoneL, fill = closures, geom = "raster")+
-        scale_fill_manual(breaks=c("1","0"),values=c('skyblue2','red'),labels=c("Open","Closed"))+
-        ggtitle("Current Area Closures")+
-        geom_point(aes(x=PortX, y=PortY-0.35,shape="points",name="Port"),size=5,color="slategrey")+
-        scale_shape_discrete(name  ="",labels="Port"))
+              scale_fill_manual(breaks=c("1","0"),values=c('skyblue2','red'),labels=c("Open","Closed"))+
+              ggtitle("Current Area Closures")+
+              geom_point(aes(x=PortX, y=PortY-0.35,shape="points",name="Port"),size=5,color="slategrey")+
+              scale_shape_discrete(name  ="",labels="Port"))
       dev.off()
     }
 
@@ -419,8 +419,8 @@ Master<-function(Life,SimCTL,Fleets,Species, Taxa, season,Samp,ManageStrats,Mana
 
 
         Assessments[[timeStep]] <- Output
-        #         Assessments <- Assess(Fishery = Fishery, Data = Monitor_Data, Assessments = PossibleAssessments, BatchFolder = BatchFolder, FigureFolder = FigureFolder)
-
+        Fishery$MvK <- 1.6
+#         Assessments <- Assess(Fishery = Fishery, Data = Monitor_Data, Assessments = PossibleAssessments, BatchFolder = BatchFolder, FigureFolder = FigureFolder)
         #==SARAH'S MORE COMPLICATED SAMPLING PROTOCOL FOR FUTURE USE==
         #Sample at the end of fishing if timeStep equals a sampling time step.
         #             if(timeStep %in% (sampleTimeSteps+burn)){

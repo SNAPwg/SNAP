@@ -18,6 +18,8 @@ Assess <- function(Fishery, Data, Assessments, BatchFolder, FigureFolder, MakeFi
   library(ggmap, quietly = T)
   library(R2admb, quietly = T)
   library(tidyr, quietly = T)
+  library(scales, quietly = T)
+  library(grid, quietly = T)
 
   sapply(list.files(pattern="[.]R$", path="Functions", full.names=TRUE), source)
 
