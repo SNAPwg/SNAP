@@ -65,7 +65,7 @@ setwd(OriginalWorkingDir)
 
 Management<- NULL
 
-Management$SizeLimit<- 200
+Management$SizeLimit<- 20
 
 Management$NTZ<- NoTakeZoneImp
 
