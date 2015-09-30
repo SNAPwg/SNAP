@@ -20,4 +20,8 @@
 0.8,# steepness of the BH parameterization (source)
 0.00001,# sigmaR = if detRec != 0 this is the sd of the lognormal error applied to recruitment
 0.5,# depletion (what percent is the stock of virgin)
+<<<<<<< HEAD
 
+=======
+1.6,# MvK = the ratio of natural mortality to vbk
+>>>>>>> a2378db78adcaffba909867e894688a5f59518d8
